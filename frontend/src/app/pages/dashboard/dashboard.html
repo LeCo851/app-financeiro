@@ -1,0 +1,46 @@
+<div class="card">
+  <p-toolbar>
+    <div class="p-toolbar-group-start">
+      <i class="pi pi-wallet text-2xl mr-2 text-primary"></i>
+      <span class="font-bold text-xl">Financeiro AI</span>
+    </div>
+    <div class="p-toolbar-group-end">
+      <p-button label="Sair" icon="pi pi-power-off" severity="danger" [text]="true" (onClick)="logout()"></p-button>
+    </div>
+  </p-toolbar>
+</div>
+
+<div class="p-4">
+  <p-card header="Minhas Transações" styleClass="shadow-2">
+
+    <p-table [value]="transactions" [loading]="loading" styleClass="p-datatable-sm">
+      <ng-template pTemplate="header">
+        <tr>
+          <th>Descrição</th>
+          <th>Data</th>
+          <th>Tipo</th>
+          <th>Valor</th>
+        </tr>
+      </ng-template>
+      <ng-template pTemplate="body" let-t>
+        <tr>
+          <td>{{ t.description }}</td>
+          <td>{{ t.date | date:'dd/MM/yyyy' }}</td> <td>
+                        <span [class]="t.type === 'INCOME' ? 'text-green-500' : 'text-red-500'">
+                            {{ t.type === 'INCOME' ? 'Receita' : 'Despesa' }}
+                        </span>
+        </td>
+          <td class="font-bold">
+            {{ t.amount | currency:'BRL' }} </td>
+        </tr>
+      </ng-template>
+
+      <ng-template pTemplate="emptymessage">
+        <tr>
+          <td colspan="4" class="text-center p-4">Nenhuma transação encontrada.</td>
+        </tr>
+      </ng-template>
+    </p-table>
+
+  </p-card>
+</div>

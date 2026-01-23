@@ -1,0 +1,56 @@
+spring:
+  application:
+    name: financeiro-backend
+
+  # 1. Configuração de Threads Virtuais (Java 21)
+  threads:
+    virtual:
+      enabled: true
+
+  # 2. Banco de Dados (Supabase)
+  datasource:
+    driver-class-name: org.postgresql.Driver
+    url: ${DB_URL}
+    username: ${DB_USER}
+    password: ${DB_PASS}
+    hikari:
+      maximum-pool-size: 10
+      minimum-idle: 2
+      timeout: 30000
+
+  # 3. Migração (Flyway)
+  flyway:
+    enabled: true
+    baseline-on-migrate: true
+    locations: classpath:db/migration
+
+  # 4. JPA / Hibernate
+  jpa:
+    open-in-view: false
+    show-sql: false
+    database-platform: org.hibernate.dialect.PostgreSQLDialect
+    hibernate:
+      ddl-auto: validate
+  security:
+    oauth2:
+      resource server:
+        jwt:
+        # O Spring vai acessar essa URL para baixar a chave pública e validar o ES256
+          jwk-set-uri: ${SUPABASE_URL}/auth/v1/.well-known/jwks.json
+          issuer-uri: ${SUPABASE_URL}/auth/v1
+
+  # 6. Upload de Arquivos
+  servlet:
+    multipart:
+      max-file-size: 10MB
+      max-request-size: 10MB
+
+  # 7. Inteligência Artificial (Grok) - AGORA DENTRO DO BLOCO SPRING CORRETO
+  ai:
+    openai:
+      base-url: https://api.grok.x.ai/v1
+      api-key: ${GROK_API_KEY}
+      chat:
+        options:
+          model: grok-beta
+          temperature: 0.1
