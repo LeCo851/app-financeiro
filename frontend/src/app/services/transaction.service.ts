@@ -5,10 +5,10 @@ import {Observable} from 'rxjs';
 
 
 export interface Transaction {
-  id?: number;
+  id?: string;
   description: string;
   amount: number;
-  date: string;
+  date: string | Date;
   type: 'INCOME' | 'EXPENSE';
 }
 

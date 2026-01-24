@@ -53,4 +53,9 @@ spring:
       chat:
         options:
           model: grok-beta
+
           temperature: 0.1
+pluggy:
+  base-url: https://api.pluggy.ai
+  client-id: ${PLUGGY_CLIENT_ID}
+  client-secret: ${PLUGGY_CLIENT_SECRET}

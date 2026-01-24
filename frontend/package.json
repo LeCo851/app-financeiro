@@ -34,6 +34,7 @@
     "@supabase/supabase-js": "^2.91.1",
     "angular-plotly.js": "^20.0.0",
     "plotly.js-dist-min": "^3.3.1",
+    "pluggy-connect-sdk": "^2.13.0",
     "primeicons": "^7.0.0",
     "primeng": "^21.0.4",
     "rxjs": "~7.8.0",

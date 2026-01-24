@@ -4,8 +4,29 @@
       <i class="pi pi-wallet text-2xl mr-2 text-primary"></i>
       <span class="font-bold text-xl">Financeiro AI</span>
     </div>
-    <div class="p-toolbar-group-end">
-      <p-button label="Sair" icon="pi pi-power-off" severity="danger" [text]="true" (onClick)="logout()"></p-button>
+
+    <div class="p-toolbar-group-end gap-2">
+
+      <p-button
+        label="Conectar Conta"
+        icon="pi pi-building-columns"
+        severity="help"
+        [loading]="connecting"
+        (onClick)="connectBank()">
+      </p-button>
+      <p-button
+        label="Nova Transação"
+        icon="pi pi-plus"
+        (onClick)="showDialog()">
+      </p-button>
+
+      <p-button
+        label="Sair"
+        icon="pi pi-power-off"
+        severity="danger"
+        [text]="true"
+        (onClick)="logout()">
+      </p-button>
     </div>
   </p-toolbar>
 </div>
@@ -13,7 +34,7 @@
 <div class="p-4">
   <p-card header="Minhas Transações" styleClass="shadow-2">
 
-    <p-table [value]="transactions" [loading]="loading" styleClass="p-datatable-sm">
+    <p-table [value]="transactions" [loading]="loading" styleClass="p-datatable-sm" [tableStyle]="{ 'min-width': '50rem' }">
       <ng-template pTemplate="header">
         <tr>
           <th>Descrição</th>
@@ -22,25 +43,117 @@
           <th>Valor</th>
         </tr>
       </ng-template>
+
       <ng-template pTemplate="body" let-t>
         <tr>
           <td>{{ t.description }}</td>
-          <td>{{ t.date | date:'dd/MM/yyyy' }}</td> <td>
-                        <span [class]="t.type === 'INCOME' ? 'text-green-500' : 'text-red-500'">
+
+          <td>{{ t.date | date:'dd/MM/yyyy' : '+0000' }}</td>
+
+          <td>
+                        <span [class]="t.type === 'INCOME' ?
+                            'bg-green-100 text-green-700 px-2 py-1 border-round font-bold text-sm' :
+                            'bg-red-100 text-red-700 px-2 py-1 border-round font-bold text-sm'">
                             {{ t.type === 'INCOME' ? 'Receita' : 'Despesa' }}
                         </span>
-        </td>
-          <td class="font-bold">
-            {{ t.amount | currency:'BRL' }} </td>
+          </td>
+
+          <td [class]="t.type === 'INCOME' ? 'text-green-600 font-bold' : 'text-red-600 font-bold'">
+            {{ t.amount | currency:'BRL' }}
+          </td>
         </tr>
       </ng-template>
 
       <ng-template pTemplate="emptymessage">
         <tr>
-          <td colspan="4" class="text-center p-4">Nenhuma transação encontrada.</td>
+          <td colspan="4" class="text-center p-4">
+            Nenhuma transação encontrada. Clique em "Nova Transação" para começar!
+          </td>
         </tr>
       </ng-template>
     </p-table>
 
   </p-card>
 </div>
+
+<p-dialog
+  header="Nova Transação"
+  [(visible)]="displayDialog"
+  [modal]="true"
+  [style]="{ width: '450px' }"
+  [draggable]="false"
+  [resizable]="false">
+
+  <div class="flex flex-column gap-4 pt-4">
+
+    <div class="flex flex-column gap-2">
+      <label for="description" class="font-bold text-sm">Descrição</label>
+      <input
+        pInputText
+        id="description"
+        [(ngModel)]="currentTransaction.description"
+        class="w-full"
+        autocomplete="off"
+        placeholder="Ex: Conta de Luz" />
+    </div>
+
+    <div class="flex flex-column gap-2">
+      <label for="amount" class="font-bold text-sm">Valor</label>
+      <p-inputNumber
+        inputId="amount"
+        [(ngModel)]="currentTransaction.amount"
+        mode="currency"
+        currency="BRL"
+        locale="pt-BR"
+        styleClass="w-full"
+        inputStyleClass="w-full"
+        placeholder="R$ 0,00">
+      </p-inputNumber>
+    </div>
+
+    <div class="flex flex-column gap-2">
+      <label for="date" class="font-bold text-sm">Data</label>
+      <p-datepicker
+        inputId="date"
+        [(ngModel)]="currentTransaction.date"
+        dateFormat="dd/mm/yy"
+        [showIcon]="true"
+        appendTo="body"
+        styleClass="w-full"
+        inputStyleClass="w-full">
+      </p-datepicker>
+    </div>
+
+    <div class="flex flex-column gap-2">
+      <label for="type" class="font-bold text-sm">Tipo</label>
+      <p-select
+        inputId="type"
+        [options]="types"
+        [(ngModel)]="currentTransaction.type"
+        optionLabel="label"
+        optionValue="value"
+        styleClass="w-full"
+        appendTo="body"
+        placeholder="Selecione o tipo">
+      </p-select>
+    </div>
+
+  </div>
+
+  <ng-template pTemplate="footer">
+    <p-button
+      label="Cancelar"
+      icon="pi pi-times"
+      [text]="true"
+      (onClick)="displayDialog = false">
+    </p-button>
+
+    <p-button
+      label="Salvar"
+      icon="pi pi-check"
+      [loading]="saving"
+      (onClick)="saveTransaction()">
+    </p-button>
+  </ng-template>
+
+</p-dialog>
