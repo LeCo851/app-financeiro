@@ -1,3 +1,5 @@
+<p-toast position="top-right"></p-toast>
+
 <div class="flex align-items-center justify-content-center min-h-screen surface-ground">
   <div class="w-full md:w-5 lg:w-4">
     <p-card header="Financeiro AI" subheader="Login" styleClass="text-center shadow-4">
@@ -8,7 +10,8 @@
         </div>
       </ng-template>
 
-      <form (ngSubmit)="onSubmit()" class="flex flex-column gap-4 mt-3">
+      <form (ngSubmit)="onLogin()" class="flex flex-column gap-4 mt-3">
+
         <p-floatLabel>
           <input pInputText id="email" [(ngModel)]="email" name="email" class="w-full" required />
           <label for="email">E-mail</label>
@@ -40,6 +43,14 @@
       <div *ngIf="errorMessage" class="mt-3">
         <p-message severity="error" [text]="errorMessage" styleClass="w-full block"></p-message>
       </div>
+
+      <div class="mt-4 text-center">
+        <span class="text-600 font-medium line-height-3">Não tem uma conta?</span>
+        <a routerLink="/register" class="font-medium no-underline ml-2 text-blue-500 cursor-pointer hover:text-blue-700 transition-colors">
+          Cadastre-se
+        </a>
+      </div>
+
     </p-card>
   </div>
 </div>

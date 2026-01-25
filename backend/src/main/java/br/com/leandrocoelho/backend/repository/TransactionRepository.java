@@ -12,15 +12,15 @@ import java.util.UUID;
 @Repository
 public interface TransactionRepository extends JpaRepository<Transaction, UUID> {
 
-    List<Transaction> findAllByUserIdOrderByDateDesc(UUID userId);
+    List<Transaction> findByUser_IdOrderByDateDesc(UUID userId);
 
 
-    boolean existsByUserIdAndTransactionHash(UUID userId, String transactionHash);
-
+    boolean existsByUser_IdAndTransactionHash(UUID userId, String transactionHash);
+    boolean existsByPluggyTransactionId(String pluggyTransactionId);
     //Query nativa otimizada para buscar somente o saldo
-    @Query("SELECT COALESCE(SUM (t.amount),0 ) FROM Transaction t WHERE t.userId = :userId AND t.type = 'INCOME'")
+    @Query("SELECT COALESCE(SUM (t.amount),0 ) FROM Transaction t WHERE t.user.id = :userId AND t.type = 'INCOME'")
     BigDecimal sumIncomeByUserId(UUID userId);
 
-    @Query("SELECT COALESCE(SUM (t.amount),0 ) FROM Transaction t WHERE t.userId = :userId AND t.type = 'EXPENSE'")
+    @Query("SELECT COALESCE(SUM (t.amount),0 ) FROM Transaction t WHERE t.user.id = :userId AND t.type = 'EXPENSE'")
     BigDecimal sumExpenseByUserId(UUID userId);
 }

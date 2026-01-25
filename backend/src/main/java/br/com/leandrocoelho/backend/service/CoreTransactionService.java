@@ -9,6 +9,7 @@ import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.time.LocalDate;
+import java.time.ZonedDateTime;
 import java.util.List;
 import java.util.UUID;
 
@@ -22,14 +23,22 @@ public class CoreTransactionService {
     public List<Transaction> listMyTransactions(){
 
         UUID userId = UserContext.getCurrentUserId();
-        return  repository.findAllByUserIdOrderByDateDesc(userId);
+        return  repository.findByUser_IdOrderByDateDesc(userId);
+    }
+
+    @Transactional(readOnly = true)
+    public List<Transaction> listTransactionsByUser(UUID userId) {
+        return repository.findByUser_IdOrderByDateDesc(userId);
     }
 
     @Transactional
     public Transaction createTransaction(Transaction newTransaction){
 
-        UUID userId = UserContext.getCurrentUserId();
-        newTransaction.setUserId(userId);
+        if(newTransaction.getUser() == null){
+            throw new IllegalArgumentException("A transação deve estar vinculada a um usuário");
+        }
+
+        UUID userId = newTransaction.getUser().getId();
 
         if(newTransaction.getSource() == null){
             newTransaction.setSource(TransactionSource.MANUAL);
@@ -39,11 +48,11 @@ public class CoreTransactionService {
             newTransaction.setTransactionHash(UUID.randomUUID().toString());
         }
 
-        if(newTransaction.getDate().isAfter(LocalDate.now().plusYears(1))){
+        if(newTransaction.getDate().isAfter(ZonedDateTime.now().plusYears(1))){
             throw new IllegalArgumentException("Não é permitido lançar transações muito futuras");
         }
         if(newTransaction.getTransactionHash() != null){
-            boolean exists = repository.existsByUserIdAndTransactionHash(userId, newTransaction.getTransactionHash());
+            boolean exists = repository.existsByUser_IdAndTransactionHash(userId, newTransaction.getTransactionHash());
             if(exists){
                 throw new IllegalStateException("Transação duplicada detectada.");
             }

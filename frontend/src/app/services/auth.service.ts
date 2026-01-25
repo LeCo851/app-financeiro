@@ -9,9 +9,9 @@ import {Router} from '@angular/router';
   providedIn: 'root',
 })
 export class AuthService {
-  private supabase: SupabaseClient;
+  private readonly supabase: SupabaseClient;
 
-  private userSubject = new BehaviorSubject<User | null>(null);
+  private readonly userSubject = new BehaviorSubject<User | null>(null);
   //exposto como Observable para os componentes só olharem o valor
   public user$ = this.userSubject.asObservable(); // readOnly do observable
 
@@ -34,11 +34,6 @@ export class AuthService {
     });
   }
 
-  signIn(email: string, password: string): Observable<any>{
-    return from(this.supabase.auth.signInWithPassword({email, password}));
-    //transforma o promise do supabase em observable
-  }
-
   async signOut(){
     await this.supabase.auth.signOut();
     this.router.navigate(['/login']);
@@ -50,5 +45,26 @@ export class AuthService {
 
   get isAuthenticated(): boolean {
     return !!this.userSubject.value;
+  }
+
+  async signUp(email:string, password: string, fullName: string){
+    const{data, error} = await  this.supabase.auth.signUp({
+      email: email,
+      password: password,
+      options: {
+        data:{
+          full_name: fullName,
+        },
+      },
+    });
+    return {data ,error};
+  }
+
+  async signIn(email: string, password: string){
+    const {data, error} = await this.supabase.auth.signInWithPassword({
+      email,
+      password
+    });
+    return {data, error};
   }
 }

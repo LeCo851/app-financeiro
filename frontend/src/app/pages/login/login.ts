@@ -1,7 +1,7 @@
 import { Component } from '@angular/core';
 import {CommonModule} from '@angular/common';
 import {FormsModule} from '@angular/forms';
-import {Router} from '@angular/router';
+import {Router, RouterModule} from '@angular/router';
 import {AuthService} from '../../services/auth.service';
 
 //PrimeNG
@@ -11,6 +11,8 @@ import { PasswordModule } from 'primeng/password';
 import { ButtonModule } from 'primeng/button';
 import { FloatLabelModule } from 'primeng/floatlabel';
 import { MessageModule } from 'primeng/message';
+import {MessageService} from 'primeng/api';
+import {ToastModule} from 'primeng/toast';
 
 
 
@@ -24,11 +26,15 @@ import { MessageModule } from 'primeng/message';
     PasswordModule,
     ButtonModule,
     FloatLabelModule,
-    MessageModule
+    MessageModule,
+    ToastModule,
+    RouterModule
 
   ],
   templateUrl: './login.html',
   styleUrl: './login.scss',
+  providers:[MessageService],
+  standalone: true
 })
 export class Login {
 
@@ -37,26 +43,48 @@ export class Login {
   loading = false;
   errorMessage = '';
 
-  constructor(private authService: AuthService, private  router: Router) {}
 
-  onSubmit(){
-    this.errorMessage = '';
+  constructor(
+    private authService: AuthService,
+    private  router: Router,
+    private messageService: MessageService) {}
+
+  async onLogin(){
+
+    if (!this.email || !this.password) {
+      this.messageService.add({ severity: 'warn', summary: 'Atenção', detail: 'Preencha todos os campos.' });
+      return;
+    }
     this.loading = true;
 
-    this.authService.signIn(this.email, this.password).subscribe({
-      next: (response) =>{
+    try {
+      const {data, error} = await this.authService.signIn(this.email,this.password);
+
+      if(error){
+        this.messageService.add({
+          severity: 'error',
+          summary:'Erro.',
+          detail: error.message || "Falha na autenticação"
+        });
         this.loading = false;
-        if (response.error){
-          this.errorMessage = "Erro: " + response.error.message;
-        }else {
-          this.router.navigate(['/dashboard'])
-        }
-      },
-      error: (err) => {
-        this.loading = false;
-        this.errorMessage = "Erro de conexão.";
-        console.error(err);
+        return;
       }
-    });
+      this.messageService.add({
+        severity: 'success',
+        summary: 'Bem-vindo!',
+        detail: 'Login realizado com sucesso.'
+      });
+      this.router.navigate(['/dashboard']);
+
+    }catch (err: any){
+      console.error(err);
+      this.messageService.add({
+        severity: 'error',
+        summary: 'Erro Crítico',
+        detail: 'Ocorreu um erro inesperado.'
+      });
+    }finally {
+      this.loading = false;
+    }
   }
 }

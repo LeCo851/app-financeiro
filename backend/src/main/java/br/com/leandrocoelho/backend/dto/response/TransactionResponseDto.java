@@ -19,38 +19,56 @@ public class TransactionResponseDto {
     private LocalDate date;
     private TransactionType type;
     private TransactionSource source;
-
+    private String categoryColor;
     // Flattening: Dados da categoria "achatados" para facilitar o display
     private String categoryName;
     private String categoryIcon;
 
     private String scenarioName;
     private boolean isSimulation;
+    private String merchantName;
+    private Integer currentInstallment;
+    private Integer totalInstallments;
 
 
     // Construtor estático (Factory Method) para converter Entidade -> DTO
-    // Evita usar bibliotecas pesadas como ModelMapper para algo simples
     public static TransactionResponseDto fromEntity(Transaction transaction){
         TransactionResponseDto dto = new TransactionResponseDto();
 
         dto.setId(transaction.getId());
         dto.setDescription(transaction.getDescription());
         dto.setAmount(transaction.getAmount());
-        dto.setDate(transaction.getDate());
+
+        // --- A CORREÇÃO ESTÁ AQUI ---
+        // Extraímos apenas a parte da Data do ZonedDateTime
+        if (transaction.getDate() != null) {
+            dto.setDate(transaction.getDate().toLocalDate());
+        }
+        // ----------------------------
+
         dto.setType(transaction.getType());
         dto.setSource(transaction.getSource());
 
+        // Mapeamento de Categoria
         if(transaction.getCategory() != null){
             dto.setCategoryName(transaction.getCategory().getName());
             dto.setCategoryIcon(transaction.getCategory().getIcon());
+            dto.setCategoryColor(transaction.getCategory().getColor());
         }
 
+        // Mapeamento de Cenário
         if(transaction.getScenario() != null){
             dto.setScenarioName(transaction.getScenario().getName());
             dto.setSimulation(true);
-        }else {
+        } else {
             dto.setSimulation(false);
         }
+
+        // Mapeamento de Dados Ricos (Útil para o Front mostrar "Uber - Loja")
+        dto.setMerchantName(transaction.getMerchantName());
+        dto.setCurrentInstallment(transaction.getInstallmentNumber());
+        dto.setTotalInstallments(transaction.getTotalInstallments());
+
         return dto;
     }
 }

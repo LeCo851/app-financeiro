@@ -4,12 +4,12 @@ import br.com.leandrocoelho.backend.model.enums.TransactionSource;
 import br.com.leandrocoelho.backend.model.enums.TransactionType;
 import jakarta.persistence.*;
 import lombok.*;
+import lombok.experimental.SuperBuilder;
 import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.type.SqlTypes;
 
 import java.math.BigDecimal;
-import java.time.LocalDate;
-import java.util.UUID;
+import java.time.ZonedDateTime;
 
 @Entity
 @Table(name = "transactions")
@@ -17,11 +17,30 @@ import java.util.UUID;
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
-@Builder
-public class Transaction extends BaseEntity{
+@SuperBuilder
+public class Transaction extends BaseEntity {
 
-    @Column(name = "user_id", nullable = false)
-    private UUID userId;
+    // --- RELACIONAMENTOS (Alterado de UUID raw para Entidades) ---
+
+    // Usamos o objeto User. Isso permite fazer transaction.getUser().getGrossSalary() na IA.
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "user_id", nullable = false)
+    private User user;
+
+    // NOVO: Vínculo com a conta bancária (Essencial para saber se é Crédito ou Débito real)
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "account_id")
+    private Account account;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "category_id")
+    private Category category;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "scenario_id")
+    private Scenario scenario;
+
+    // --- DADOS BÁSICOS ---
 
     @Column(nullable = false)
     private String description;
@@ -32,37 +51,81 @@ public class Transaction extends BaseEntity{
     @Column(nullable = false)
     private BigDecimal amount;
 
+    // Correto: ZonedDateTime mapeia para TIMESTAMP WITH TIME ZONE do PostgreSQL
     @Column(nullable = false)
-    private LocalDate date;
+    private ZonedDateTime date;
 
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
-    private TransactionType type;
+    private TransactionType type; // CREDIT, DEBIT
 
-    // relacionamento com categoria ( 1 T -> N categorias)
-    //Lazy para performance
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "category_id")
-    private Category category;
+    // NOVO: Status da transação (PENDING ou POSTED)
+    @Column(length = 20)
+    private String status;
 
-    @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "scenario_id")
-    private Scenario scenario;
+    @Column(name = "currency_code", length = 3)
+    private String currencyCode; // BRL, USD
 
-    @Column(name = "transaction_hash", unique = true)
+    // --- IDENTIFICADORES ---
+
+    @Column(name = "transaction_hash")
     private String transactionHash;
 
+    // NOVO: ID original da Pluggy (Crucial para atualizações e não duplicar dados)
+    @Column(name = "pluggy_transaction_id", unique = true)
+    private String pluggyTransactionId;
+
     @Enumerated(EnumType.STRING)
     @Column(nullable = false)
-    private TransactionSource source;
+    private TransactionSource source; // PLUGGY, MANUAL
+
+    // --- DADOS RICOS (MERCHANT / LOJA) ---
+    // A IA usa isso para saber se você gasta muito em "Restaurantes" vs "Supermercado"
+
+    @Column(name = "merchant_name")
+    private String merchantName;
+
+    @Column(name = "merchant_cnpj", length = 20)
+    private String merchantCnpj;
+
+    @Column(name = "merchant_category")
+    private String merchantCategory;
+
+    // --- DADOS DE PAGAMENTO (BOLETO / PIX) ---
+
+    @Column(name = "payment_method")
+    private String paymentMethod; // BOLETO, PIX
+
+    @Column(name = "payer_doc_number", length = 20)
+    private String payerDocNumber;
+
+    @Column(name = "receiver_name")
+    private String receiverName;
+
+    @Column(name = "receiver_doc_number", length = 20)
+    private String receiverDocNumber;
+
+    @Column(name = "boleto_barcode")
+    private String boletoBarcode;
+
+    // --- PARCELAMENTO (CARTÃO DE CRÉDITO) ---
+    // Vital para projeção de fluxo de caixa futuro
+
+    @Column(name = "installment_number")
+    private Integer installmentNumber; // Ex: Parcela 2
+
+    @Column(name = "total_installments")
+    private Integer totalInstallments; // Ex: De 10
+
+    // --- PAYLOAD BRUTO (BACKUP) ---
 
     @JdbcTypeCode(SqlTypes.JSON)
     @Column(name = "raw_payload", columnDefinition = "jsonb")
     private String rawPayLoad;
 
-    public boolean isSimulation(){
+    // --- MÉTODOS UTILITÁRIOS ---
+
+    public boolean isSimulation() {
         return this.scenario != null;
     }
-
-
 }

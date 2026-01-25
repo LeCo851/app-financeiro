@@ -6,15 +6,23 @@ import br.com.leandrocoelho.backend.dto.response.TransactionResponseDto;
 import br.com.leandrocoelho.backend.model.Category;
 import br.com.leandrocoelho.backend.model.Scenario;
 import br.com.leandrocoelho.backend.model.Transaction;
+import br.com.leandrocoelho.backend.model.User;
 import br.com.leandrocoelho.backend.model.enums.TransactionSource;
+import br.com.leandrocoelho.backend.repository.UserRepository;
 import br.com.leandrocoelho.backend.service.CoreTransactionService;
+import br.com.leandrocoelho.backend.service.UserService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
+import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.web.bind.annotation.*;
+import org.springframework.web.client.RestClient;
 
+import java.time.ZoneId;
 import java.util.List;
+import java.util.UUID;
 
 @RestController
 @RequestMapping("/api/transaction")
@@ -22,19 +30,35 @@ import java.util.List;
 public class TransactionController {
 
     private final CoreTransactionService coreTransactionService;
-
+    private final UserRepository userRepository;
+    
     @PostMapping
-    public ResponseEntity<TransactionResponseDto> create(@RequestBody @Valid TransactionRequestDto dto){
+    public ResponseEntity<TransactionResponseDto> create
+            (@RequestBody @Valid TransactionRequestDto dto,
+             @AuthenticationPrincipal Jwt jwt
+             ){
 
-        Transaction entity = Transaction.builder()
+        UUID userId = UUID.fromString(jwt.getClaimAsString("sub"));
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new RuntimeException("Usuário não encontrado"));
+        Transaction.TransactionBuilder builder = Transaction.builder()
+                .user(user)
                 .description(dto.getDescription())
                 .amount(dto.getAmount())
-                .date(dto.getDate())
+                .date(dto.getDate().atStartOfDay(ZoneId.systemDefault()))
                 .type(dto.getType())
-                .source(TransactionSource.MANUAL)
-                .category(dto.getCategoryId() != null ? Category.builder().userId(dto.getCategoryId()).build() : null)
-                .scenario(dto.getScenarioId() != null ? Scenario.builder().userId(dto.getScenarioId()).build() : null)
-                .build();
+                .source(TransactionSource.MANUAL);
+
+
+        if(dto.getCategoryId() != null){
+            builder.category(Category.builder().id(dto.getCategoryId()).build());
+        }
+        if(dto.getScenarioId() != null){
+            builder.scenario(Scenario.builder().id(dto.getScenarioId()).build());
+        }
+
+        Transaction entity = builder.build();
+
 
         Transaction saved = coreTransactionService.createTransaction(entity);
 
@@ -46,8 +70,10 @@ public class TransactionController {
 
 
     @GetMapping
-    public ResponseEntity<List<TransactionResponseDto>> list(){
-        List<Transaction> transactions = coreTransactionService.listMyTransactions();
+    public ResponseEntity<List<TransactionResponseDto>> list(@AuthenticationPrincipal Jwt jwt){
+        UUID userId = UUID.fromString(jwt.getClaimAsString("sub"));
+
+        List<Transaction> transactions = coreTransactionService.listTransactionsByUser(userId);
 
         //converte lista de entidades para lista de DTOs
         List<TransactionResponseDto> responseDto = transactions.stream()
