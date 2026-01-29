@@ -1,59 +1,91 @@
-# Frontend
+# Especificações do Frontend - App Financeiro
 
-This project was generated using [Angular CLI](https://github.com/angular/angular-cli) version 21.1.0.
+Este documento descreve a estrutura, serviços e modelos do frontend do App Financeiro.
 
-## Development server
+## Visão Geral
 
-To start a local development server, run:
+O frontend é desenvolvido em Angular e consome a API REST do backend. Ele utiliza Supabase para autenticação e gerencia o estado da aplicação através de serviços injetáveis.
 
-```bash
-ng serve
-```
+## Estrutura do Projeto
 
-Once the server is running, open your browser and navigate to `http://localhost:4200/`. The application will automatically reload whenever you modify any of the source files.
+O código fonte está localizado em `src/app`.
 
-## Code scaffolding
+### Pacotes Principais
 
-Angular CLI includes powerful code scaffolding tools. To generate a new component, run:
+*   `core`: Componentes e serviços essenciais (guards, interceptors).
+*   `pages`: Componentes de página (Login, Dashboard, Transações, Investimentos).
+*   `models`: Interfaces TypeScript que espelham os DTOs do backend.
+*   `services`: Serviços para comunicação com a API e lógica de negócios.
 
-```bash
-ng generate component component-name
-```
+## Serviços (`src/app/services`)
 
-For a complete list of available schematics (such as `components`, `directives`, or `pipes`), run:
+### AuthService (`auth.service.ts`)
+Gerencia a autenticação com Supabase.
+*   `user$`: Observable do usuário atual.
+*   `isAuthenticated`: Getter booleano.
+*   `getSessionToken()`: Retorna o token JWT da sessão.
+*   `signUp(email, password, fullName)`: Cria novo usuário.
+*   `signIn(email, password)`: Realiza login.
+*   `signOut()`: Realiza logout.
 
-```bash
-ng generate --help
-```
+### TransactionService (`transaction.service.ts`)
+Gerencia transações financeiras.
+*   `findAll(year?, month?)`: Busca transações, opcionalmente filtradas por mês/ano.
+    *   Retorna: `Observable<Transaction[]>`
+*   `getSummary()`: Busca o resumo financeiro (saldos).
+    *   Retorna: `Observable<DashboardSummary>`
+*   `create(transaction)`: Cria uma nova transação.
+    *   Retorna: `Observable<Transaction>`
 
-## Building
+### InvestmentService (`investment.service.ts`)
+Gerencia investimentos.
+*   `findAll()`: Busca todos os investimentos do usuário.
+    *   Retorna: `Observable<Investment[]>`
+*   `sync(itemId)`: Solicita sincronização de investimentos via Pluggy.
+    *   Retorna: `Observable<void>`
 
-To build the project run:
+### OpenFinanceService (`open-finance.service.ts`)
+Gerencia a integração com Open Finance (Pluggy).
+*   `getConnectToken()`: Obtém token para inicializar o widget da Pluggy.
+    *   Retorna: `Observable<ConnectTokenResponse>`
+*   `syncConnection(itemId)`: Solicita sincronização de dados após conexão bem-sucedida.
+    *   Retorna: `Observable<void>`
 
-```bash
-ng build
-```
+## Modelos (Interfaces)
 
-This will compile your project and store the build artifacts in the `dist/` directory. By default, the production build optimizes your application for performance and speed.
+### Transaction
+Interface para objetos de transação.
+*   `id`: string (opcional)
+*   `description`: string
+*   `amount`: number
+*   `date`: string | Date
+*   `type`: 'INCOME' | 'EXPENSE' | 'INVESTMENT'
+*   `source`: string
+*   `categoryName`: string (opcional)
+*   `categoryColor`: string (opcional)
+*   `categoryIcon`: string (opcional)
+*   `merchantName`: string (opcional)
+*   `totalInstallments`: number (opcional)
+*   `currentInstallment`: number (opcional)
 
-## Running unit tests
+### DashboardSummary
+Interface para o resumo do dashboard.
+*   `totalIncome`: number (opcional)
+*   `totalExpense`: number (opcional)
+*   `balance`: number (opcional)
+*   `currentBalance`: number (opcional)
 
-To execute unit tests with the [Vitest](https://vitest.dev/) test runner, use the following command:
+### Investment
+Interface para objetos de investimento (definida em `models/investment.model.ts`, mas referenciada no serviço).
+*   (Estrutura inferida do backend DTO): `id`, `pluggyInvestmentId`, `name`, `code`, `isin`, `type`, `subType`, `balance`, `amountInvested`, `quantity`, `annualRate`, `rateType`, `last12mRate`, `dueDate`, `status`.
 
-```bash
-ng test
-```
+### ConnectTokenResponse
+Interface para resposta do token de conexão.
+*   `accessToken`: string
 
-## Running end-to-end tests
+## Configuração de Ambiente
 
-For end-to-end (e2e) testing, run:
-
-```bash
-ng e2e
-```
-
-Angular CLI does not come with an end-to-end testing framework by default. You can choose one that suits your needs.
-
-## Additional Resources
-
-For more information on using the Angular CLI, including detailed command references, visit the [Angular CLI Overview and Command Reference](https://angular.dev/tools/cli) page.
+As configurações de API e chaves do Supabase estão localizadas em `src/environment/environment.ts`.
+*   `apiUrl`: URL base do backend (ex: `http://localhost:8080/api`).
+*   `supabaseUrl`: URL do projeto Supabase.
+*   `supabaseKey`: Chave pública (anon key) do Supabase.

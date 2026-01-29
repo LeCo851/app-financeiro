@@ -348,6 +348,26 @@ export class Dashboard implements OnInit {
     });
   }
 
+  deleteTransaction(transaction: Transaction){
+    if(!transaction.id) return;
+
+    if(confirm('Tem certeza que deseja excluir essa transação?')){
+      this.transactionService.delete(transaction.id).subscribe({
+        next: () => {
+          this.transactions = this.transactions.filter(t => t.id !== transaction.id);
+
+          this.calculateMetrics();
+          this.updatePlotlyCharts();
+
+          this.transactionService.getSummary().subscribe(res =>{
+            if (res.currentBalance !== undefined) this.currentBalance = res.currentBalance;
+          });
+        },
+        error: (err) => console.error("Erro ao excluior: ", err)
+      });
+    }
+  }
+
   logout() {
     this.authService.signOut();
   }

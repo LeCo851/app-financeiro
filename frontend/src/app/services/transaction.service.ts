@@ -11,13 +11,11 @@ export interface Transaction {
   date: string | Date;
   type: 'INCOME' | 'EXPENSE' | 'INVESTMENT';
   source: string;
-  // --- NOVOS CAMPOS QUE FALTAVAM ---
   categoryName?: string;
   categoryColor?: string;
   categoryIcon?: string;
   merchantName?: string;
 
-  // Parcelas (se estiver usando)
   totalInstallments?: number;
   currentInstallment?: number;
 }
@@ -51,5 +49,8 @@ export class TransactionService {
 
   create(transaction: Transaction): Observable<Transaction>{
     return this.http.post<Transaction>(this.apiUrl, transaction);
+  }
+  delete(id: string): Observable<void> {
+    return this.http.delete<void>(`${this.apiUrl}/${id}`);
   }
 }

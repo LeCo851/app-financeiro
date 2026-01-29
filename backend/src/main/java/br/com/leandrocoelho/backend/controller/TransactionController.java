@@ -101,4 +101,11 @@ public class TransactionController {
                 .currentBalance(currentBalance)
                 .build());
     }
+
+    @DeleteMapping("/{id}")
+    public ResponseEntity<TransactionResponseDto> delete(@PathVariable UUID id){
+        coreTransactionService.deleteTransaction(id);
+        return ResponseEntity.noContent().build();
+
+    }
 }

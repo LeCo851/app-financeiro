@@ -21,6 +21,7 @@ public class CoreTransactionService {
 
     private final TransactionRepository repository;
 
+
     @Transactional(readOnly = true)
     public List<Transaction> listMyTransactions(){
 
@@ -28,10 +29,12 @@ public class CoreTransactionService {
         return  repository.findByUser_IdOrderByDateDesc(userId);
     }
 
+
     @Transactional(readOnly = true)
     public List<Transaction> listTransactionsByUser(UUID userId) {
         return repository.findByUser_IdOrderByDateDesc(userId);
     }
+
 
     @Transactional(readOnly = true)
     public List<Transaction> listTransactionsByUserAndMonth(UUID userId, Integer year, Integer month) {
@@ -48,11 +51,13 @@ public class CoreTransactionService {
         return repository.findByUser_IdAndDateBetweenOrderByDateDesc(userId, startZoned, endZoned);
     }
 
+
     @Transactional(readOnly = true)
     public BigDecimal getCurrentBalance(UUID userId) {
         // Saldo até o momento atual (ZonedDateTime.now())
         return repository.calculateBalanceUntilDate(userId, ZonedDateTime.now());
     }
+
 
     @Transactional
     public Transaction createTransaction(Transaction newTransaction){
@@ -81,8 +86,6 @@ public class CoreTransactionService {
                 existing.setDate(newTransaction.getDate()); // Data pode mudar (ajuste de fuso ou compensação)
                 existing.setStatus(newTransaction.getStatus()); // Ex: PENDING -> POSTED
                 existing.setCategory(newTransaction.getCategory()); // Categoria pode ter vindo nova
-
-                // Campos ricos (se você estiver preenchendo)
                 existing.setMerchantName(newTransaction.getMerchantName());
                 existing.setPaymentMethod(newTransaction.getPaymentMethod());
 
@@ -103,5 +106,20 @@ public class CoreTransactionService {
             }
         }
         return repository.save(newTransaction);
+    }
+
+    @Transactional
+    public void deleteTransaction(UUID transactionId){
+        UUID userId = UserContext.getCurrentUserId();
+
+        Transaction transaction = repository.findById(transactionId)
+                .orElseThrow(() -> new IllegalArgumentException("Transação não encontrada"));
+
+        if(!transaction.getUser().getId().equals(userId)){
+            throw  new IllegalStateException("Operação não permitida: A transação não pertence ao seu usuário");
+        }
+
+        repository.delete(transaction);
+
     }
 }
