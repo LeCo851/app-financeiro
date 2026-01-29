@@ -4,6 +4,7 @@ import br.com.leandrocoelho.backend.integration.pluggy.dto.PluggyAccountDto;
 import br.com.leandrocoelho.backend.integration.pluggy.dto.PluggyTransactionDto;
 import br.com.leandrocoelho.backend.integration.pluggy.mapper.PluggyDataMapper;
 import br.com.leandrocoelho.backend.model.Account;
+import br.com.leandrocoelho.backend.model.Category;
 import br.com.leandrocoelho.backend.model.Transaction;
 import br.com.leandrocoelho.backend.model.User;
 import br.com.leandrocoelho.backend.model.enums.TransactionSource;
@@ -31,6 +32,7 @@ public class SyncService {
     private final PluggyDataMapper pluggyDataMapper;
     private final UserRepository userRepository;
     private final CoreAccountService accountService;
+    private final CoreCategoryService coreCategoryService;
 
     @Transactional
     public void syncConnection(String itemId, UUID userId){
@@ -48,7 +50,21 @@ public class SyncService {
 
             for(PluggyTransactionDto pluggyTransactionDto: pluggyTransactionDtos){
                 try {
+                    
                     Transaction transaction = pluggyDataMapper.toEntity(pluggyTransactionDto, user, account);
+                    String categoryToUse = null;
+                    if(pluggyTransactionDto.merchant() != null && pluggyTransactionDto.merchant().category() != null){
+                        categoryToUse = pluggyTransactionDto.merchant().category();
+                    }
+
+                    Category category = coreCategoryService.findOrCreateCategory(
+                            categoryToUse,
+                            user,
+                            transaction.getType()
+                    );
+                    transaction.setCategory(category);
+
+
                     coreTransactionService.createTransaction(transaction);
                 }catch (Exception e){
                     log.error("Falha ao importar a transação {}: {}", pluggyTransactionDto.id(),e.getMessage());

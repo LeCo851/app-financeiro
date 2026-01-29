@@ -2,6 +2,7 @@ package br.com.leandrocoelho.backend.controller;
 
 
 import br.com.leandrocoelho.backend.dto.request.TransactionRequestDto;
+import br.com.leandrocoelho.backend.dto.response.DashboardSummaryDto;
 import br.com.leandrocoelho.backend.dto.response.TransactionResponseDto;
 import br.com.leandrocoelho.backend.model.Category;
 import br.com.leandrocoelho.backend.model.Scenario;
@@ -10,7 +11,6 @@ import br.com.leandrocoelho.backend.model.User;
 import br.com.leandrocoelho.backend.model.enums.TransactionSource;
 import br.com.leandrocoelho.backend.repository.UserRepository;
 import br.com.leandrocoelho.backend.service.CoreTransactionService;
-import br.com.leandrocoelho.backend.service.UserService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
 import org.springframework.http.HttpStatus;
@@ -18,14 +18,15 @@ import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.oauth2.jwt.Jwt;
 import org.springframework.web.bind.annotation.*;
-import org.springframework.web.client.RestClient;
 
+
+import java.math.BigDecimal;
 import java.time.ZoneId;
 import java.util.List;
 import java.util.UUID;
 
 @RestController
-@RequestMapping("/api/transaction")
+@RequestMapping("/api/transactions")
 @RequiredArgsConstructor
 public class TransactionController {
 
@@ -47,7 +48,11 @@ public class TransactionController {
                 .amount(dto.getAmount())
                 .date(dto.getDate().atStartOfDay(ZoneId.systemDefault()))
                 .type(dto.getType())
-                .source(TransactionSource.MANUAL);
+                .source(TransactionSource.MANUAL)
+                // Novos campos
+                .merchantName(dto.getMerchantName())
+                .installmentNumber(dto.getCurrentInstallment())
+                .totalInstallments(dto.getTotalInstallments());
 
 
         if(dto.getCategoryId() != null){
@@ -70,10 +75,14 @@ public class TransactionController {
 
 
     @GetMapping
-    public ResponseEntity<List<TransactionResponseDto>> list(@AuthenticationPrincipal Jwt jwt){
+    public ResponseEntity<List<TransactionResponseDto>> list(
+            @AuthenticationPrincipal Jwt jwt,
+            @RequestParam(required = false) Integer year,
+            @RequestParam(required = false) Integer month
+    ){
         UUID userId = UUID.fromString(jwt.getClaimAsString("sub"));
 
-        List<Transaction> transactions = coreTransactionService.listTransactionsByUser(userId);
+        List<Transaction> transactions = coreTransactionService.listTransactionsByUserAndMonth(userId, year, month);
 
         //converte lista de entidades para lista de DTOs
         List<TransactionResponseDto> responseDto = transactions.stream()
@@ -81,5 +90,15 @@ public class TransactionController {
                 .toList();
 
         return ResponseEntity.ok(responseDto);
+    }
+
+    @GetMapping("/summary")
+    public ResponseEntity<DashboardSummaryDto> getSummary(@AuthenticationPrincipal Jwt jwt) {
+        UUID userId = UUID.fromString(jwt.getClaimAsString("sub"));
+        BigDecimal currentBalance = coreTransactionService.getCurrentBalance(userId);
+
+        return ResponseEntity.ok(DashboardSummaryDto.builder()
+                .currentBalance(currentBalance)
+                .build());
     }
 }

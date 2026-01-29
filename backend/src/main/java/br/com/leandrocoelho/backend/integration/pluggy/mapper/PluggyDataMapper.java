@@ -54,7 +54,12 @@ public class PluggyDataMapper {
     }
     private void mapMerchant(Transaction.TransactionBuilder builder, PluggyTransactionDto dto) {
         if (dto.merchant() != null) {
-            builder.merchantName(dto.merchant().name());
+
+            String bestName = dto.merchant().name();
+            if(bestName == null || bestName.isBlank()){
+                bestName = dto.merchant().businessName();
+            }
+            builder.merchantName(bestName);
             builder.merchantCnpj(dto.merchant().cnpj());
             builder.merchantCategory(dto.merchant().category());
         }
@@ -70,13 +75,23 @@ public class PluggyDataMapper {
         if (dto.paymentData() != null) {
             builder.paymentMethod(dto.paymentData().paymentMethod());
 
+            // --- CORREÇÃO NO PAYER (PAGADOR) ---
             if (dto.paymentData().payer() != null) {
-                builder.payerDocNumber(dto.paymentData().payer().documentNumber().value());
+                // Só tenta pegar o valor se o documento não for nulo
+                if (dto.paymentData().payer().documentNumber() != null) {
+                    builder.payerDocNumber(dto.paymentData().payer().documentNumber().value());
+                }
             }
+            // --- CORREÇÃO NO RECEIVER (RECEBEDOR) ---
             if (dto.paymentData().receiver() != null) {
                 builder.receiverName(dto.paymentData().receiver().name());
-                builder.receiverDocNumber(dto.paymentData().receiver().documentNumber().value());
+
+                // Só tenta pegar o valor se o documento não for nulo
+                if (dto.paymentData().receiver().documentNumber() != null) {
+                    builder.receiverDocNumber(dto.paymentData().receiver().documentNumber().value());
+                }
             }
+
             if (dto.paymentData().boletoMetadata() != null) {
                 builder.boletoBarcode(dto.paymentData().boletoMetadata().barcode());
             }

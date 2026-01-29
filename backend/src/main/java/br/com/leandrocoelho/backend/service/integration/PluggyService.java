@@ -90,4 +90,19 @@ public class PluggyService {
 
         return response != null ? response.results() : List.of();
     }
+
+    public List<PluggyInvestmentDto> getInvestments(String itemId){
+        String apiKey = getApiKey();
+
+        var response = restClient.get()
+                .uri(uriBuilder -> uriBuilder
+                        .path("/investments")
+                        .queryParam("itemId", itemId)
+                        .build())
+                .header("X-API-KEY", apiKey)
+                .retrieve()
+                .body(new ParameterizedTypeReference<PluggyResultDto<PluggyInvestmentDto>>() {});
+
+        return response != null ? response.results() : List.of();
+    }
 }

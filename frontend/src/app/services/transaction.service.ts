@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
 import {environment} from '../../environment/environment';
-import {HttpClient} from '@angular/common/http';
+import {HttpClient, HttpParams} from '@angular/common/http';
 import {Observable} from 'rxjs';
 
 
@@ -9,19 +9,44 @@ export interface Transaction {
   description: string;
   amount: number;
   date: string | Date;
-  type: 'INCOME' | 'EXPENSE';
+  type: 'INCOME' | 'EXPENSE' | 'INVESTMENT';
+  source: string;
+  // --- NOVOS CAMPOS QUE FALTAVAM ---
+  categoryName?: string;
+  categoryColor?: string;
+  categoryIcon?: string;
+  merchantName?: string;
+
+  // Parcelas (se estiver usando)
+  totalInstallments?: number;
+  currentInstallment?: number;
+}
+
+export interface DashboardSummary {
+  totalIncome?: number;
+  totalExpense?: number;
+  balance?: number;
+  currentBalance?: number;
 }
 
 @Injectable({
   providedIn: 'root',
 })
 export class TransactionService {
-  private apiUrl = `${environment.apiUrl}/transaction`;
+  private apiUrl = `${environment.apiUrl}/transactions`;
 
   constructor(private http: HttpClient) {}
 
-  findAll(): Observable<Transaction[]>{
-    return this.http.get<Transaction[]>(this.apiUrl);
+  findAll(year?: number, month?: number): Observable<Transaction[]>{
+    let params = new HttpParams();
+    if (year) params = params.set('year', year);
+    if (month) params = params.set('month', month);
+
+    return this.http.get<Transaction[]>(this.apiUrl, { params });
+  }
+
+  getSummary(): Observable<DashboardSummary> {
+    return this.http.get<DashboardSummary>(`${this.apiUrl}/summary`);
   }
 
   create(transaction: Transaction): Observable<Transaction>{

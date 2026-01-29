@@ -1,217 +1,220 @@
--- Habilita extensão de UUID
+-- ==========================================
+-- 0. CONFIGURAÇÕES INICIAIS
+-- ==========================================
 CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 
 -- ==========================================
--- 1. TABELA DE USUÁRIOS (Perfil Completo)
+-- 1. TABELA DE USUÁRIOS
 -- ==========================================
-CREATE TABLE users (
-                       id UUID PRIMARY KEY, -- ID vindo do Supabase/Auth
-                       email VARCHAR(255) NOT NULL UNIQUE,
-                       full_name VARCHAR(255),
+CREATE TABLE IF NOT EXISTS users (
+                                     id UUID PRIMARY KEY, -- Geralmente sincronizado com Auth do Supabase
+                                     email VARCHAR(255) NOT NULL UNIQUE,
+    full_name VARCHAR(255),
 
-    -- Dados de Identidade (Vindos da Pluggy /identity)
-                       tax_number VARCHAR(20),       -- CPF/CNPJ
-                       job_title VARCHAR(100),       -- "Comercial"
-                       company_name VARCHAR(100),    -- "Pluggy LTDA"
-                       investor_profile VARCHAR(50), -- "Moderate", "Conservative"
+    -- CAMPOS DE INTEGRAÇÃO (NOVO)
+    pluggy_item_id VARCHAR(255), -- Armazena o ID da conexão para o "Sync Rápido"
 
-    -- Perfil Financeiro (Input Manual)
-                       gross_salary DECIMAL(19, 2),        -- Salário Bruto
-                       net_salary_estimate DECIMAL(19, 2), -- Líquido Estimado
-                       receives_plr BOOLEAN DEFAULT FALSE,
-                       plr_estimate DECIMAL(19, 2),
-                       savings_goal DECIMAL(19, 2),
+-- Identidade Financeira
+    tax_number VARCHAR(20),
+    job_title VARCHAR(100),
+    company_name VARCHAR(100),
+    investor_profile VARCHAR(50),
 
-    -- Perfil Comportamental (Calculado pela IA)
-                       impulsivity_level VARCHAR(20) DEFAULT 'UNKNOWN',
+    -- Perfil Financeiro (Manual)
+    gross_salary DECIMAL(19, 2),
+    net_salary_estimate DECIMAL(19, 2),
+    receives_plr BOOLEAN DEFAULT FALSE,
+    plr_estimate DECIMAL(19, 2),
+    savings_goal DECIMAL(19, 2),
 
-                       created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-                       updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
-);
+    -- IA / Comportamental
+    impulsivity_level VARCHAR(20) DEFAULT 'UNKNOWN',
+
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+                             );
 
 -- ==========================================
--- 2. TABELA DE CONTAS (Bancárias e Cartões)
+-- 2. TABELA DE CONTAS
 -- ==========================================
-CREATE TABLE accounts (
-                          id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-                          user_id UUID NOT NULL REFERENCES users(id),
-                          pluggy_account_id VARCHAR(255) NOT NULL UNIQUE, -- Vínculo com a API externa
+CREATE TABLE IF NOT EXISTS accounts (
+                                        id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    user_id UUID NOT NULL REFERENCES users(id),
+    pluggy_account_id VARCHAR(255) NOT NULL UNIQUE, -- Link único com a API
 
-                          name VARCHAR(100) NOT NULL,    -- "Conta Corrente", "Mastercard Black"
-                          type VARCHAR(50) NOT NULL,     -- "BANK", "CREDIT"
-                          subtype VARCHAR(50),           -- "CHECKING_ACCOUNT", "CREDIT_CARD"
-                          currency_code VARCHAR(3) DEFAULT 'BRL',
+    name VARCHAR(100) NOT NULL,
+    type VARCHAR(50) NOT NULL,     -- "BANK", "CREDIT"
+    subtype VARCHAR(50),           -- "CHECKING_ACCOUNT", "SAVINGS_ACCOUNT"
+    currency_code VARCHAR(3) DEFAULT 'BRL',
 
-                          balance DECIMAL(19, 2),        -- Saldo atual
+    balance DECIMAL(19, 2),
 
-    -- Campos Específicos de Cartão de Crédito
-                          credit_limit DECIMAL(19, 2),           -- Limite Total
-                          available_credit_limit DECIMAL(19, 2), -- Limite Disponível
-                          balance_close_date DATE,               -- Dia do fechamento
-                          balance_due_date DATE,                 -- Dia do vencimento
+    -- Cartão de Crédito
+    credit_limit DECIMAL(19, 2),
+    available_credit_limit DECIMAL(19, 2),
+    balance_close_date DATE,
+    balance_due_date DATE,
 
-    -- Campos Bancários
-                          agency VARCHAR(20),
-                          account_number VARCHAR(50),
+    -- Bancário
+    agency VARCHAR(20),
+    account_number VARCHAR(50),
 
-                          created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-                          updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
-);
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+                             );
 
 -- ==========================================
 -- 3. TABELA DE CATEGORIAS
 -- ==========================================
-CREATE TABLE categories (
-                            id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-                            user_id UUID NOT NULL REFERENCES users(id),
-                            name VARCHAR(100) NOT NULL,
-                            icon VARCHAR(50),
-                            type VARCHAR(20) NOT NULL, -- "INCOME", "EXPENSE"
-                            color VARCHAR(20),
+CREATE TABLE IF NOT EXISTS categories (
+                                          id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    user_id UUID NOT NULL REFERENCES users(id),
+    name VARCHAR(100) NOT NULL,
+    icon VARCHAR(50),
+    type VARCHAR(20) NOT NULL, -- "INCOME", "EXPENSE"
+    color VARCHAR(20),
 
-                            created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-                            updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
 
-                            UNIQUE (user_id, name)
-);
+                             UNIQUE (user_id, name)
+    );
 
 -- ==========================================
 -- 4. TABELA DE CENÁRIOS (Digital Twin)
 -- ==========================================
-CREATE TABLE scenarios (
-                           id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-                           user_id UUID NOT NULL REFERENCES users(id),
-                           name VARCHAR(100) NOT NULL,
-                           description TEXT,
-                           is_active BOOLEAN DEFAULT FALSE,
+CREATE TABLE IF NOT EXISTS scenarios (
+                                         id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    user_id UUID NOT NULL REFERENCES users(id),
+    name VARCHAR(100) NOT NULL,
+    description TEXT,
+    is_active BOOLEAN DEFAULT FALSE,
 
-                           created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-                           updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
-);
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+                             );
 
 -- ==========================================
--- 5. TABELA DE TRANSAÇÕES (O Coração)
+-- 5. TABELA DE TRANSAÇÕES (Blindada)
 -- ==========================================
-CREATE TABLE transactions (
-                              id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-                              user_id UUID NOT NULL REFERENCES users(id),
-                              account_id UUID REFERENCES accounts(id), -- Saber de qual conta saiu o dinheiro
-                              category_id UUID REFERENCES categories(id),
-                              scenario_id UUID REFERENCES scenarios(id),
+CREATE TABLE IF NOT EXISTS transactions (
+                                            id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    user_id UUID NOT NULL REFERENCES users(id),
+    account_id UUID REFERENCES accounts(id),
+    category_id UUID REFERENCES categories(id),
+    scenario_id UUID REFERENCES scenarios(id),
 
-    -- Dados Básicos
-                              description VARCHAR(255) NOT NULL,
-                              original_description TEXT,
-                              amount DECIMAL(19, 2) NOT NULL,
-                              date TIMESTAMP WITH TIME ZONE NOT NULL,
-                              type VARCHAR(20) NOT NULL, -- "CREDIT", "DEBIT"
-                              status VARCHAR(20) DEFAULT 'POSTED', -- "PENDING", "POSTED"
-                              currency_code VARCHAR(3) DEFAULT 'BRL',
+    -- Dados Core
+    description VARCHAR(255) NOT NULL,
+    original_description TEXT,
+    amount DECIMAL(19, 2) NOT NULL,
+    date TIMESTAMP WITH TIME ZONE NOT NULL, -- Importante para o fuso horário
+                       type VARCHAR(20) NOT NULL, -- "INCOME", "EXPENSE", "INVESTMENT"
+    status VARCHAR(20) DEFAULT 'POSTED',
+    currency_code VARCHAR(3) DEFAULT 'BRL',
 
-    -- Identificadores Externos
-                              transaction_hash VARCHAR(255), -- Hash único para evitar duplicidade
-                              pluggy_transaction_id VARCHAR(255), -- ID original da Pluggy
-                              source VARCHAR(50) NOT NULL, -- "PLUGGY", "MANUAL", "CSV"
+    -- Identificadores e Proteção
+    transaction_hash VARCHAR(255),
+    pluggy_transaction_id VARCHAR(255), -- ID da Pluggy
+    source VARCHAR(50) NOT NULL,
 
-    -- Dados Ricos: Comerciante (Merchant)
-                              merchant_name VARCHAR(255),
-                              merchant_cnpj VARCHAR(20),
-                              merchant_category VARCHAR(100),
+    -- Dados Ricos
+    merchant_name VARCHAR(255),
+    merchant_cnpj VARCHAR(20),
+    merchant_category VARCHAR(100),
 
-    -- Dados Ricos: Pagamento (Boleto/Pix)
-                              payment_method VARCHAR(50), -- "BOLETO", "PIX"
-                              payer_doc_number VARCHAR(20),
-                              receiver_name VARCHAR(255),
-                              receiver_doc_number VARCHAR(20),
+    payment_method VARCHAR(50),
+    payer_doc_number VARCHAR(20),
+    receiver_name VARCHAR(255),
+    receiver_doc_number VARCHAR(20),
+    boleto_barcode VARCHAR(255),
 
-    -- Dados Ricos: Boleto
-                              boleto_barcode VARCHAR(255),
+    installment_number INTEGER,
+    total_installments INTEGER,
+    raw_payload JSONB,
 
-    -- Dados Ricos: Parcelamento (Cartão)
-                              installment_number INTEGER,     -- Parcela atual (ex: 2)
-                              total_installments INTEGER,     -- Total parcelas (ex: 12)
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
 
-                              raw_payload JSONB, -- Backup completo do JSON original
-
-                              created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-                              updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-
-                              UNIQUE (user_id, pluggy_transaction_id) -- Garante que não duplica ID da Pluggy
-);
+                       -- CONSTRAINT VITAL: Impede duplicidade de ID vindo da Pluggy para o mesmo usuário
+                       CONSTRAINT unique_pluggy_transaction_per_user UNIQUE (user_id, pluggy_transaction_id)
+    );
 
 -- ==========================================
 -- 6. TABELA DE INVESTIMENTOS (Patrimônio)
 -- ==========================================
-CREATE TABLE investments (
-                             id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-                             user_id UUID NOT NULL REFERENCES users(id),
-                             pluggy_investment_id VARCHAR(255) NOT NULL UNIQUE,
+CREATE TABLE IF NOT EXISTS investments (
+                                           id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    user_id UUID NOT NULL REFERENCES users(id),
+    pluggy_investment_id VARCHAR(255) NOT NULL UNIQUE, -- ID único do ativo na Pluggy
 
-                             name VARCHAR(255) NOT NULL, -- "Fundo XP...", "PETR4"
-                             code VARCHAR(50),           -- Ticker ou CNPJ
-                             isin VARCHAR(50),           -- Código Internacional
+    name VARCHAR(255) NOT NULL,
+    code VARCHAR(50),
+    isin VARCHAR(50),
 
-                             type VARCHAR(50),    -- "MUTUAL_FUND", "EQUITY", "FIXED_INCOME"
-                             subtype VARCHAR(50), -- "CDB", "LCI", "ETF"
+    type VARCHAR(50),    -- "MUTUAL_FUND", "SECURITY", "EQUITY"
+    subtype VARCHAR(50), -- "CDB", "LCI", "ETF"
 
-                             balance DECIMAL(19, 2),        -- Saldo Atual
-                             amount_invested DECIMAL(19, 2),-- Valor Aplicado
-                             quantity DECIMAL(19, 8),       -- Quantidade de Cotas/Ações
+    balance DECIMAL(19, 2),        -- Saldo Atual (Foto)
+    amount_invested DECIMAL(19, 2),
+    quantity DECIMAL(19, 8),
 
     -- Rentabilidade
-                             annual_rate DECIMAL(10, 4),      -- Taxa a.a (ex: 12.5)
-                             rate_type VARCHAR(20),           -- "CDI", "IPCA", "PRE"
-                             last_12m_rate DECIMAL(10, 4),    -- Rentabilidade últimos 12 meses
+    annual_rate DECIMAL(10, 4),
+    rate_type VARCHAR(20),
+    last_12m_rate DECIMAL(10, 4),
 
-                             due_date DATE, -- Vencimento
-                             status VARCHAR(20), -- "ACTIVE"
+    due_date DATE,
+    status VARCHAR(20),
 
-                             created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-                             updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
-);
-
--- ==========================================
--- 7. TABELA DE EMPRÉSTIMOS (Dívidas)
--- ==========================================
-CREATE TABLE loans (
-                       id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-                       user_id UUID NOT NULL REFERENCES users(id),
-                       pluggy_loan_id VARCHAR(255) NOT NULL UNIQUE,
-
-                       product_name VARCHAR(255), -- "Crédito Consignado"
-                       contract_number VARCHAR(100),
-
-                       total_contract_amount DECIMAL(19, 2), -- Valor tomado
-                       outstanding_balance DECIMAL(19, 2),   -- Saldo Devedor
-
-                       date DATE,      -- Data contratação
-                       due_date DATE,  -- Data fim contrato
-
-                       interest_rate DECIMAL(10, 4), -- Taxa de Juros
-                       cet_annual DECIMAL(10, 4),    -- Custo Efetivo Total
-
-                       installments_paid INTEGER,
-                       installments_total INTEGER,
-
-                       created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
-                       updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
-);
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+                             );
 
 -- ==========================================
--- 8. INTENÇÃO DE COMPRA (Rastro Digital)
+-- 7. TABELA DE EMPRÉSTIMOS
 -- ==========================================
-CREATE TABLE purchase_intents (
-                                  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
-                                  user_id UUID NOT NULL REFERENCES users(id),
-                                  url VARCHAR(2048),
-                                  product_name VARCHAR(255),
-                                  product_price DECIMAL(19, 2),
-                                  analysis_result JSONB,
-                                  created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
-);
+CREATE TABLE IF NOT EXISTS loans (
+                                     id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    user_id UUID NOT NULL REFERENCES users(id),
+    pluggy_loan_id VARCHAR(255) NOT NULL UNIQUE,
 
--- Índices Estratégicos
-CREATE INDEX idx_transactions_user_date ON transactions(user_id, date);
-CREATE INDEX idx_transactions_merchant ON transactions(merchant_name); -- Busca rápida por loja
-CREATE INDEX idx_accounts_user ON accounts(user_id);
-CREATE INDEX idx_investments_user ON investments(user_id);
+    product_name VARCHAR(255),
+    contract_number VARCHAR(100),
+
+    total_contract_amount DECIMAL(19, 2),
+    outstanding_balance DECIMAL(19, 2),
+
+    date DATE,
+    due_date DATE,
+
+    interest_rate DECIMAL(10, 4),
+    cet_annual DECIMAL(10, 4),
+
+    installments_paid INTEGER,
+    installments_total INTEGER,
+
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+                             );
+
+-- ==========================================
+-- 8. INTENÇÃO DE COMPRA
+-- ==========================================
+CREATE TABLE IF NOT EXISTS purchase_intents (
+                                                id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
+    user_id UUID NOT NULL REFERENCES users(id),
+    url VARCHAR(2048),
+    product_name VARCHAR(255),
+    product_price DECIMAL(19, 2),
+    analysis_result JSONB,
+    created_at TIMESTAMP WITH TIME ZONE DEFAULT CURRENT_TIMESTAMP
+                             );
+
+-- ==========================================
+-- 9. ÍNDICES DE PERFORMANCE
+-- ==========================================
+CREATE INDEX IF NOT EXISTS idx_transactions_user_date ON transactions(user_id, date);
+CREATE INDEX IF NOT EXISTS idx_transactions_merchant ON transactions(merchant_name);
+CREATE INDEX IF NOT EXISTS idx_accounts_user ON accounts(user_id);
+CREATE INDEX IF NOT EXISTS idx_investments_user ON investments(user_id);

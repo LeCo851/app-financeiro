@@ -20,7 +20,6 @@ public class TransactionRequestDto {
     private BigDecimal amount;
 
     @NotNull(message = "A data é obrigatória")
-    @PastOrPresent(message = "Não é permitido lançar transações futuras (User agendamento)")
     private LocalDate date;
 
     @NotNull(message = "O tipo de transação é obrigatório")
@@ -31,4 +30,9 @@ public class TransactionRequestDto {
 
     //Preenchido para simulacao
     private UUID scenarioId;
+
+    // Novos campos opcionais para enriquecer a transação manual
+    private String merchantName;
+    private Integer currentInstallment;
+    private Integer totalInstallments;
 }
