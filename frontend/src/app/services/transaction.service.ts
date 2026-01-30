@@ -53,4 +53,12 @@ export class TransactionService {
   delete(id: string): Observable<void> {
     return this.http.delete<void>(`${this.apiUrl}/${id}`);
   }
+
+  sync(): Observable<void> {
+    return this.http.post<void>(`${this.apiUrl}/sync`, {});
+  }
+
+  savePluggyItemId(itemId: string): Observable<void> {
+    return this.http.post<void>(`${this.apiUrl}/link-pluggy`, { itemId });
+  }
 }

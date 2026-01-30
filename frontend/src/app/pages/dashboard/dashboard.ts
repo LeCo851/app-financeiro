@@ -63,10 +63,13 @@ export class Dashboard implements OnInit {
   loading = true;
   saving = false;
   connecting = false;
+  refreshing = false;
+  isSyncing = false; // <--- Controle do Dialog de Sincronização
 
   // --- KPIs ---
   totalBalance = 0; // Saldo do Mês/Ano selecionado
   currentBalance = 0; // Saldo Corrente (Acumulado até hoje)
+  averageIncome = 0; // Saldo Médio Mensal (Salário Médio)
   totalIncome = 0;
   totalExpense = 0;
   totalInvested = 0; // <--- Total acumulado em Investimentos
@@ -154,9 +157,12 @@ export class Dashboard implements OnInit {
 
     // 2. Carrega Saldo Corrente (Acumulado)
     this.transactionService.getSummary().subscribe({
-      next: (summary) => {
+      next: (summary: any) => {
         if (summary.currentBalance !== undefined) {
           this.currentBalance = summary.currentBalance;
+        }
+        if (summary.averageIncome !== undefined) {
+          this.averageIncome = summary.averageIncome;
         }
       },
       error: (err) => console.error("Erro ao carregar saldo corrente:", err)
@@ -195,13 +201,8 @@ export class Dashboard implements OnInit {
       .filter(t => t.type === 'EXPENSE')
       .reduce((acc, t) => acc + t.amount, 0);
 
-    // Saldo Total DO MÊS = Soma aritmética de tudo (considerando sinais)
-    this.totalBalance = this.transactions.reduce((acc, t) => {
-      if (t.type === 'EXPENSE' || (t.type === 'INVESTMENT' && t.amount < 0)) {
-        return acc - Math.abs(t.amount);
-      }
-      return acc + Math.abs(t.amount);
-    }, 0);
+    // Saldo Total DO MÊS = Receitas - Despesas (Investimentos e Transferências são neutros)
+    this.totalBalance = this.totalIncome + this.totalExpense;
   }
 
   // --- CONFIGURAÇÃO PLOTLY ---
@@ -305,6 +306,21 @@ export class Dashboard implements OnInit {
     });
   }
 
+  refreshData() {
+    this.refreshing = true;
+    console.log("Iniciando atualização")
+    this.transactionService.sync().subscribe({
+      next: () => {
+        this.loadData(); // Recarrega KPIs, Gráficos e Tabelas
+        this.refreshing = false;
+      },
+      error: (err) => {
+        console.error('Erro ao sincronizar dados:', err);
+        this.refreshing = false;
+      }
+    });
+  }
+
   private initPluggyWidget(accessToken: string) {
     const pluggyConnect = new PluggyConnect({
       connectToken: accessToken,
@@ -315,35 +331,47 @@ export class Dashboard implements OnInit {
     pluggyConnect.init();
   }
 
-  // --- SYNC ENCADEADO ---
+  // --- SYNC ENCADEADO ---botão conectar conta
   private syncData(itemId: string) {
-    this.loading = true;
+    this.isSyncing = true; // Ativa o aviso amigável
     if (!itemId) return;
 
-    console.log("1. Sincronizando Transações...");
+    console.log("1. Salvando conexão (Item ID)...");
 
-    // Passo 1: Sincroniza Transações
-    this.openFinanceService.syncConnection(itemId).subscribe({
+    // Passo 1: Salva o ID no Backend para uso futuro
+    this.transactionService.savePluggyItemId(itemId).subscribe({
       next: () => {
-        console.log("Transações OK. 2. Sincronizando Investimentos...");
+        console.log("Item ID Salvo. 2. Sincronizando Transações...");
 
-        // Passo 2: Sincroniza Investimentos (ENCADEADO)
-        this.investmentService.sync(itemId).subscribe({
+        // Passo 2: Sincroniza Transações
+        this.openFinanceService.syncConnection(itemId).subscribe({
           next: () => {
-            console.log("Investimentos OK. Recarregando tela...");
-            this.loadData(); // Recarrega tudo
-            this.loading = false;
+            console.log("Transações OK. 3. Sincronizando Investimentos...");
+
+            // Passo 3: Sincroniza Investimentos
+
+            this.investmentService.sync(itemId).subscribe({
+              next: () => {
+                console.log("Investimentos OK. Recarregando tela...");
+                this.loadData(); // Recarrega tudo
+                this.isSyncing = false; // Finaliza o aviso
+              },
+              error: (err) => {
+                console.error("Erro ao sync investimentos", err);
+                this.loadData(); // Recarrega o que deu certo
+                this.isSyncing = false;
+              }
+            });
           },
           error: (err) => {
-            console.error("Erro ao sync investimentos", err);
-            this.loadData(); // Recarrega o que deu certo
-            this.loading = false;
+            console.error("Erro ao sync transações:", err);
+            this.isSyncing = false;
           }
         });
       },
       error: (err) => {
-        console.error("Erro ao sync transações:", err);
-        this.loading = false;
+        console.error("Erro ao salvar Item ID:", err);
+        this.isSyncing = false;
       }
     });
   }

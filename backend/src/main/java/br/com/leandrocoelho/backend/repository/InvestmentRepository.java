@@ -12,6 +12,7 @@ import java.util.UUID;
 public interface InvestmentRepository  extends JpaRepository<Investment, UUID> {
     
     List<Investment> findAllByUserId(UUID userId);
+    List<Investment> findAllByUserIdAndStatus(UUID userId, String status);
 
     // Sugestão: Renomear para manter padrão com Account e Transaction
     Optional<Investment> findByPluggyInvestmentId(String pluggyInvestmentId);

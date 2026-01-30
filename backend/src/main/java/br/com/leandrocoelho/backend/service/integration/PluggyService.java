@@ -1,6 +1,7 @@
 package br.com.leandrocoelho.backend.service.integration;
 
 import br.com.leandrocoelho.backend.integration.pluggy.dto.*;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.core.ParameterizedTypeReference;
 import org.springframework.http.MediaType;
@@ -9,6 +10,7 @@ import org.springframework.web.client.RestClient;
 
 import java.util.List;
 
+@Slf4j
 @Service
 public class PluggyService {
 
@@ -87,7 +89,7 @@ public class PluggyService {
                 .header("X-API-KEY",apiKey)
                 .retrieve()
                 .body(new ParameterizedTypeReference<PluggyResultDto<PluggyTransactionDto>>() {});
-
+        log.info("response pluggy: {}", response);
         return response != null ? response.results() : List.of();
     }
 

@@ -7,8 +7,8 @@ CREATE EXTENSION IF NOT EXISTS "uuid-ossp";
 -- 1. TABELA DE USUÁRIOS
 -- ==========================================
 CREATE TABLE IF NOT EXISTS users (
-                                     id UUID PRIMARY KEY, -- Geralmente sincronizado com Auth do Supabase
-                                     email VARCHAR(255) NOT NULL UNIQUE,
+    id UUID PRIMARY KEY, -- Geralmente sincronizado com Auth do Supabase
+    email VARCHAR(255) NOT NULL UNIQUE,
     full_name VARCHAR(255),
 
     -- CAMPOS DE INTEGRAÇÃO (NOVO)

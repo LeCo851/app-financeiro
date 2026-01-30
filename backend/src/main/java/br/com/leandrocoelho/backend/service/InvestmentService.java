@@ -7,12 +7,14 @@ import br.com.leandrocoelho.backend.repository.InvestmentRepository;
 import br.com.leandrocoelho.backend.repository.UserRepository;
 import br.com.leandrocoelho.backend.service.integration.PluggyService;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.util.List;
 import java.util.UUID;
 
+@Slf4j
 @Service
 @RequiredArgsConstructor
 public class InvestmentService {
@@ -28,7 +30,7 @@ public class InvestmentService {
 
     @Transactional(readOnly = true)
     public List<Investment> listByUser(UUID userId){
-        return investmentRepository.findAllByUserId(userId);
+        return investmentRepository.findAllByUserIdAndStatus(userId, "ACTIVE");
     }
 
     @Transactional
@@ -45,7 +47,12 @@ public class InvestmentService {
                             .pluggyInvestmentId(dto.id())
                             .build());
 
-            investment.setName(dto.name());
+            // 1. Só sobrescreve o nome se for um investimento novo (ID nulo)
+            // Isso impede que edições manuais do usuário sejam perdidas no próximo sync
+            if (investment.getId() == null) {
+                investment.setName(dto.name());
+            }
+
             investment.setCode(dto.code());
             investment.setIsin(dto.isin());
             investment.setType(dto.type());
@@ -59,6 +66,7 @@ public class InvestmentService {
             investment.setDueDate(dto.dueDate());
             investment.setStatus(dto.status());
 
+            log.info("Investment synced: {} | User: {}", investment.getName(), userId);
             investmentRepository.save(investment);
         }
 

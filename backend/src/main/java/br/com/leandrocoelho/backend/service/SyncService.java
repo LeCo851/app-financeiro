@@ -2,25 +2,25 @@ package br.com.leandrocoelho.backend.service;
 
 import br.com.leandrocoelho.backend.integration.pluggy.dto.PluggyAccountDto;
 import br.com.leandrocoelho.backend.integration.pluggy.dto.PluggyTransactionDto;
-import br.com.leandrocoelho.backend.integration.pluggy.mapper.PluggyDataMapper;
 import br.com.leandrocoelho.backend.model.Account;
 import br.com.leandrocoelho.backend.model.Category;
 import br.com.leandrocoelho.backend.model.Transaction;
 import br.com.leandrocoelho.backend.model.User;
 import br.com.leandrocoelho.backend.model.enums.TransactionSource;
 import br.com.leandrocoelho.backend.model.enums.TransactionType;
-import br.com.leandrocoelho.backend.repository.AccountRepository;
 import br.com.leandrocoelho.backend.repository.UserRepository;
 import br.com.leandrocoelho.backend.service.integration.PluggyService;
-import com.fasterxml.jackson.core.JsonProcessingException;
-import com.fasterxml.jackson.databind.ObjectMapper;
+import br.com.leandrocoelho.backend.service.rule.TransactionClassifier;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.math.BigDecimal;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.UUID;
+import java.util.stream.Collectors;
 
 @Slf4j
 @Service
@@ -29,48 +29,91 @@ public class SyncService {
 
     private final PluggyService pluggyService;
     private final CoreTransactionService coreTransactionService;
-    private final PluggyDataMapper pluggyDataMapper;
-    private final UserRepository userRepository;
     private final CoreAccountService accountService;
     private final CoreCategoryService coreCategoryService;
+    private final InvestmentService investmentService; // <--- NOVO: Para sincronizar investimentos
+    private final UserRepository userRepository;
+    private final TransactionClassifier classifier;    // <--- NOVO: Para classificar inteligência
 
+    /**
+     * Ponto de entrada único para sincronização total (Chamado pelo Controller)
+     */
     @Transactional
-    public void syncConnection(String itemId, UUID userId){
+    public void runFullSync(UUID userId, String itemId) {
+        log.info("Iniciando Full Sync para o usuário {}", userId);
 
         User user = userRepository.findById(userId)
                 .orElseThrow(() -> new RuntimeException("Usuário não encontrado"));
 
+        // 1. Sincroniza Contas e Transações
+        syncAccountsAndTransactions(user, itemId);
+
+        // 2. Sincroniza Investimentos
+        try {
+            investmentService.syncInvestments(userId, itemId);
+        } catch (Exception e) {
+            log.error("Erro ao sincronizar investimentos (mas as transações foram salvas): {}", e.getMessage());
+        }
+
+        log.info("Sincronização finalizada com sucesso");
+    }
+
+    private void syncAccountsAndTransactions(User user, String itemId) {
+        // 1. Busca Contas na Pluggy
         List<PluggyAccountDto> accountDtos = pluggyService.getAccounts(itemId);
 
-        for(PluggyAccountDto accountDto : accountDtos){
+        for (PluggyAccountDto accountDto : accountDtos) {
+            try {
+                // 2. Sincroniza/Salva a Conta localmente
+                Account account = accountService.syncAccount(accountDto, user);
 
-            Account account = accountService.syncAccount(accountDto, user);
+                // 3. Busca Transações dessa conta
+                List<PluggyTransactionDto> pluggyTransactions = pluggyService.getTransactions(accountDto.id());
 
-            List<PluggyTransactionDto> pluggyTransactionDtos = pluggyService.getTransactions(accountDto.id());
+                if (pluggyTransactions.isEmpty()) continue;
 
-            for(PluggyTransactionDto pluggyTransactionDto: pluggyTransactionDtos){
-                try {
-                    
-                    Transaction transaction = pluggyDataMapper.toEntity(pluggyTransactionDto, user, account);
-                    String categoryToUse = null;
-                    if(pluggyTransactionDto.merchant() != null && pluggyTransactionDto.merchant().category() != null){
-                        categoryToUse = pluggyTransactionDto.merchant().category();
-                    }
+                // 4. Mapeia DTOs para Entidades (Aplicando Regras de Negócio)
+                List<Transaction> transactionsToSave = pluggyTransactions.stream()
+                        .map(dto -> mapToEntity(dto, user, account))
+                        .collect(Collectors.toList());
 
-                    Category category = coreCategoryService.findOrCreateCategory(
-                            categoryToUse,
-                            user,
-                            transaction.getType()
-                    );
-                    transaction.setCategory(category);
+                // 5. Salva em Lote (Mais performático que salvar um por um)
+                coreTransactionService.saveTransactionsBatch(transactionsToSave);
 
-
-                    coreTransactionService.createTransaction(transaction);
-                }catch (Exception e){
-                    log.error("Falha ao importar a transação {}: {}", pluggyTransactionDto.id(),e.getMessage());
-                }
+            } catch (Exception e) {
+                log.error("Falha ao processar conta {}: {}", accountDto.id(), e.getMessage());
             }
         }
-        log.info("Sincronização finalizada com sucesso");
+    }
+
+    private Transaction mapToEntity(PluggyTransactionDto dto, User user, Account account) {
+        // A) Classificação Inteligente (Define se é Receita, Despesa, Investimento ou Transferência)
+        TransactionType type = classifier.classify(dto.type(), dto.description());
+
+        // B) Resolução de Categoria
+        String pluggyCategoryName = null;
+        if (dto.merchant() != null && dto.merchant().category() != null) {
+            pluggyCategoryName = dto.merchant().category();
+        }
+
+        // Usa o service refatorado para buscar ou criar categoria traduzida
+        Category category = coreCategoryService.resolveCategory(pluggyCategoryName, user, type);
+
+        // C) Construção do Objeto (Builder)
+        return Transaction.builder()
+                .user(user)
+                .account(account) // Vincula à conta correta
+                .pluggyTransactionId(dto.id())
+                .source(TransactionSource.PLUGGY)
+                .originalDescription(dto.description())
+                .description(dto.description()) // Descrição inicial
+                .amount(dto.amount() != null ? dto.amount() : BigDecimal.ZERO) // Salva absoluto, o Type define o sinal visual
+                .date(dto.date())
+                .status(dto.status())
+                .type(type)
+                .category(category)
+                .merchantName(dto.merchant() != null ? dto.merchant().name() : null)
+                .paymentMethod(dto.paymentData() != null ? dto.paymentData().paymentMethod() : null)
+                .build();
     }
 }

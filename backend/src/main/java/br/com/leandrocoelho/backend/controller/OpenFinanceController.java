@@ -1,6 +1,8 @@
 package br.com.leandrocoelho.backend.controller;
 
 import br.com.leandrocoelho.backend.dto.request.SyncRequestDto;
+import br.com.leandrocoelho.backend.model.User;
+import br.com.leandrocoelho.backend.repository.UserRepository;
 import br.com.leandrocoelho.backend.service.SyncService;
 import br.com.leandrocoelho.backend.service.UserService;
 import br.com.leandrocoelho.backend.service.integration.PluggyService;
@@ -26,6 +28,7 @@ public class OpenFinanceController {
     private final PluggyService pluggyService;
     private final SyncService syncService;
     private final UserService userService;
+    private final UserRepository userRepository;
 
     @GetMapping("/connect-token")
     public ResponseEntity<Map<String, String>> getConnectToken(){
@@ -45,8 +48,15 @@ public class OpenFinanceController {
         log.info("Requisiçao de sync recebida. ItemId {} | Usuario: {}",request.getItemId(), userId);
 
         userService.registerUserIfNotExists(userId,email,name);
+        User user = userRepository.findById(userId)
+                        .orElseThrow(() -> new RuntimeException("Usuário não encontrado após o registro"));
+        if(request.getItemId() != null && !request.getItemId().equals(user.getPluggyItemId())){
+            user.setPluggyItemId(request.getItemId());
+            userRepository.save(user);
+            log.info("Pluggy Item Id vinculado ao usuário com sucesso");
+        }
 
-        syncService.syncConnection(request.getItemId(), userId);
+        syncService.runFullSync(userId, request.getItemId());
 
         return ResponseEntity.ok().build();
     }

@@ -30,6 +30,9 @@ public class User {
     @Column(name = "full_name")
     private String fullName;
 
+    @Column(name = "pluggy_item_id")
+    private String pluggyItemId;
+
     @Column(name = "gross_salary")
     private BigDecimal grossSalary;
 

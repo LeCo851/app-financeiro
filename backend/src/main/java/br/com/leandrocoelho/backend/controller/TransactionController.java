@@ -11,8 +11,12 @@ import br.com.leandrocoelho.backend.model.User;
 import br.com.leandrocoelho.backend.model.enums.TransactionSource;
 import br.com.leandrocoelho.backend.repository.UserRepository;
 import br.com.leandrocoelho.backend.service.CoreTransactionService;
+import br.com.leandrocoelho.backend.service.InvestmentService;
+import br.com.leandrocoelho.backend.service.SyncService;
+import groovyjarjarantlr4.v4.codegen.model.Sync;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -22,9 +26,11 @@ import org.springframework.web.bind.annotation.*;
 
 import java.math.BigDecimal;
 import java.time.ZoneId;
+import java.util.Map;
 import java.util.List;
 import java.util.UUID;
 
+@Slf4j
 @RestController
 @RequestMapping("/api/transactions")
 @RequiredArgsConstructor
@@ -32,6 +38,8 @@ public class TransactionController {
 
     private final CoreTransactionService coreTransactionService;
     private final UserRepository userRepository;
+    private final InvestmentService investmentService;
+    private final SyncService sync;
     
     @PostMapping
     public ResponseEntity<TransactionResponseDto> create
@@ -93,13 +101,17 @@ public class TransactionController {
     }
 
     @GetMapping("/summary")
-    public ResponseEntity<DashboardSummaryDto> getSummary(@AuthenticationPrincipal Jwt jwt) {
-        UUID userId = UUID.fromString(jwt.getClaimAsString("sub"));
-        BigDecimal currentBalance = coreTransactionService.getCurrentBalance(userId);
+    public ResponseEntity<DashboardSummaryDto> getSummary(
+            @AuthenticationPrincipal Jwt jwt,
+            @RequestParam(required= false) Integer year,
+            @RequestParam(required = false) Integer month
+    )
 
-        return ResponseEntity.ok(DashboardSummaryDto.builder()
-                .currentBalance(currentBalance)
-                .build());
+    {
+        UUID userId = UUID.fromString(jwt.getClaimAsString("sub"));
+        DashboardSummaryDto summaryDto = coreTransactionService.getDashboardSummary(userId,year,month);
+
+        return ResponseEntity.ok(summaryDto);
     }
 
     @DeleteMapping("/{id}")
@@ -107,5 +119,34 @@ public class TransactionController {
         coreTransactionService.deleteTransaction(id);
         return ResponseEntity.noContent().build();
 
+    }
+
+    @PostMapping("/sync")
+    public ResponseEntity<Void> syncData(@AuthenticationPrincipal Jwt jwt) {
+        UUID userId = UUID.fromString(jwt.getClaimAsString("sub"));
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new RuntimeException("Usuário não encontrado"));
+
+        if (user.getPluggyItemId() == null) {
+            return ResponseEntity.badRequest().build();
+        }
+        log.info("PluggyItemId: {} | User Id: {}", user.getPluggyItemId(), userId);
+        sync.runFullSync(userId, user.getPluggyItemId());
+        
+        return ResponseEntity.ok().build();
+    }
+
+    @PostMapping("/link-pluggy")
+    public ResponseEntity<Void> linkPluggyItem(@RequestBody Map<String, String> payload, @AuthenticationPrincipal Jwt jwt) {
+        UUID userId = UUID.fromString(jwt.getClaimAsString("sub"));
+        String itemId = payload.get("itemId");
+
+        User user = userRepository.findById(userId)
+                .orElseThrow(() -> new RuntimeException("Usuário não encontrado"));
+
+        user.setPluggyItemId(itemId);
+        userRepository.save(user);
+
+        return ResponseEntity.ok().build();
     }
 }

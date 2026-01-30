@@ -9,6 +9,7 @@ import br.com.leandrocoelho.backend.repository.UserRepository;
 import br.com.leandrocoelho.backend.service.InvestmentService;
 import jakarta.validation.Valid;
 import lombok.RequiredArgsConstructor;
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
@@ -18,6 +19,7 @@ import org.springframework.web.bind.annotation.*;
 import java.util.List;
 import java.util.UUID;
 
+@Slf4j
 @RestController
 @RequestMapping("/api/investments")
 @RequiredArgsConstructor
@@ -75,6 +77,7 @@ public class InvestmentController {
             @AuthenticationPrincipal Jwt jwt
     ) {
         UUID userId = UUID.fromString(jwt.getClaimAsString("sub"));
+        log.info("Requisição de Sync recebida {}",userId);
         investmentService.syncInvestments(userId, dto.getItemId());
         return ResponseEntity.noContent().build();
     }
