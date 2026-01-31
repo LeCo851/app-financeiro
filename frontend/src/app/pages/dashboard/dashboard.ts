@@ -124,6 +124,29 @@ export class Dashboard implements OnInit {
     { label: 'Investimento', value: 'INVESTMENT' }
   ];
 
+  // --- CORES DO TEMA ---
+  readonly colors = {
+    primary: '#6366f1',   // Indigo 500
+    success: '#10b981',   // Emerald 500
+    danger: '#ef4444',    // Red 500
+    warning: '#f59e0b',   // Amber 500
+    info: '#3b82f6',      // Blue 500
+    investment: '#8b5cf6', // Violet 500
+    text: '#64748b',      // Slate 500
+    grid: '#f1f5f9',      // Slate 100
+    bg: '#ffffff',
+    palette: [
+      '#6366f1', // Indigo
+      '#3b82f6', // Blue
+      '#0ea5e9', // Sky
+      '#14b8a6', // Teal
+      '#8b5cf6', // Violet
+      '#ec4899', // Pink
+      '#f59e0b', // Amber
+      '#64748b'  // Slate
+    ]
+  };
+
   constructor(
     private authService: AuthService,
     private transactionService: TransactionService,
@@ -252,34 +275,42 @@ export class Dashboard implements OnInit {
       metaData.push({ year: value.year, month: value.month });
     });
 
+    // Formatação de moeda para os tooltips
+    const formattedIncomes = incomes.map(v => this.formatCurrency(v));
+    const formattedExpenses = expenses.map(v => this.formatCurrency(v));
+
     this.barGraph.data = [
       {
         x: labels, y: incomes, name: 'Receitas', type: 'bar',
-        marker: { color: '#22c55e' }, customdata: metaData
+        marker: { color: this.colors.success, opacity: 0.9 },
+        customdata: metaData,
+        text: formattedIncomes,
+        hovertemplate: '<b>%{x}</b><br>Receitas: %{text}<extra></extra>'
       },
       {
         x: labels, y: expenses, name: 'Despesas', type: 'bar',
-        marker: { color: '#ef4444' }, customdata: metaData
+        marker: { color: this.colors.danger, opacity: 0.9 },
+        customdata: metaData,
+        text: formattedExpenses,
+        hovertemplate: '<b>%{x}</b><br>Despesas: %{text}<extra></extra>'
       }
     ];
   }
 
-  // --- TREEMAP LOGIC (IGNORANDO TRANSFERÊNCIAS) ---
+  // --- TREEMAP LOGIC ---
   updateTreemap(transactions: Transaction[]) {
     const nodes = new Map<string, { id: string, label: string, parent: string, value: number, color: string }>();
 
     // Adiciona nó Raiz
-    nodes.set("Histórico", { id: "Histórico", label: "Histórico", parent: "", value: 0, color: "#e2e8f0" });
+    nodes.set("Histórico", { id: "Histórico", label: "Histórico", parent: "", value: 0, color: "#f8fafc" });
 
     const processedIds = new Set<string>();
 
     transactions.forEach(t => {
-      // Ignora duplicatas e TRANSFERÊNCIAS
       if (t.type === 'TRANSFER') return;
       if (t.id && processedIds.has(t.id)) return;
       if (t.id) processedIds.add(t.id);
 
-      // Extrair Data
       let year: number;
       let month: number;
       if (typeof t.date === 'string') {
@@ -297,7 +328,6 @@ export class Dashboard implements OnInit {
       const type = t.type;
       const amount = Math.abs(t.amount);
 
-      // IDs Hierárquicos
       const yearId = `Y-${year}`;
       const monthId = `M-${year}-${month}`;
       const catId = `C-${year}-${month}-${category}`;
@@ -310,7 +340,7 @@ export class Dashboard implements OnInit {
 
       // 2. Nó MÊS
       if (!nodes.has(monthId)) {
-        nodes.set(monthId, { id: monthId, label: monthName, parent: yearId, value: 0, color: "#f8fafc" });
+        nodes.set(monthId, { id: monthId, label: monthName, parent: yearId, value: 0, color: "#e2e8f0" });
       }
 
       // 3. Nó CATEGORIA
@@ -325,13 +355,13 @@ export class Dashboard implements OnInit {
 
         if (type === 'INCOME') {
           label = 'Receita';
-          color = '#22c55e';
+          color = this.colors.success;
         } else if (type === 'EXPENSE') {
           label = 'Despesa';
-          color = '#ef4444';
+          color = this.colors.danger;
         } else if (type === 'INVESTMENT') {
           label = 'Investimento';
-          color = '#a855f7';
+          color = this.colors.investment;
         }
 
         nodes.set(leafId, {
@@ -343,11 +373,9 @@ export class Dashboard implements OnInit {
         });
       }
 
-      // Soma valor na folha
       const leafNode = nodes.get(leafId)!;
       leafNode.value += amount;
 
-      // --- PROPAGAÇÃO DE VALOR (BUBBLING UP) ---
       const catNode = nodes.get(catId)!;
       catNode.value += amount;
 
@@ -361,12 +389,12 @@ export class Dashboard implements OnInit {
       rootNode.value += amount;
     });
 
-    // Converte Map para Arrays do Plotly
     const ids: string[] = [];
     const labels: string[] = [];
     const parents: string[] = [];
     const values: number[] = [];
     const colors: string[] = [];
+    const formattedValues: string[] = [];
 
     nodes.forEach(node => {
       ids.push(node.id);
@@ -374,6 +402,7 @@ export class Dashboard implements OnInit {
       parents.push(node.parent);
       values.push(node.value);
       colors.push(node.color);
+      formattedValues.push(this.formatCurrency(node.value));
     });
 
     this.treemapGraph.data = [{
@@ -383,9 +412,11 @@ export class Dashboard implements OnInit {
       parents: parents,
       values: values,
       marker: { colors: colors },
-      textinfo: 'label+value',
+      text: formattedValues, // Passa valores formatados
+      textinfo: 'label+text', // Mostra Label + Valor Formatado
       branchvalues: 'total',
-      hoverinfo: 'label+value+percent parent'
+      hovertemplate: '<b>%{label}</b><br>%{text}<br><extra></extra>',
+      tiling: { packing: 'squarify' }
     }];
   }
 
@@ -428,20 +459,22 @@ export class Dashboard implements OnInit {
   initChartsConfig() {
     const commonConfig = {
       responsive: true,
-      displayModeBar: 'hover',
-      displaylogo: false,
-      scrollZoom: true,
-      modeBarButtonsToRemove: ['lasso2d', 'select2d', 'sendDataToCloud']
+      displayModeBar: false, // Limpa a barra de ferramentas para visual mais clean
+      scrollZoom: false,
     };
 
     const commonLayout = {
       paper_bgcolor: 'rgba(0,0,0,0)',
       plot_bgcolor: 'rgba(0,0,0,0)',
-      font: { family: 'Inter, sans-serif', color: '#4b5563' },
-      margin: { t: 30, b: 40, l: 50, r: 20 },
+      font: { family: 'Inter, sans-serif', color: this.colors.text, size: 12 },
+      margin: { t: 20, b: 30, l: 40, r: 20 },
       autosize: true,
       hovermode: 'closest',
-      hoverlabel: { bgcolor: '#ffffff', bordercolor: '#e2e8f0', font: { color: '#1e293b' } }
+      hoverlabel: {
+        bgcolor: '#ffffff',
+        bordercolor: '#e2e8f0',
+        font: { color: '#1e293b', family: 'Inter, sans-serif' }
+      }
     };
 
     // --- DONUT ---
@@ -449,19 +482,29 @@ export class Dashboard implements OnInit {
     this.donutGraph.layout = {
       ...commonLayout,
       showlegend: true,
-      legend: { orientation: 'h', y: -0.2 },
-      margin: { t: 30, b: 80, l: 20, r: 20 }
+      legend: { orientation: 'h', y: -0.1, font: { size: 11 } },
+      margin: { t: 10, b: 50, l: 10, r: 10 }
     };
 
     // --- BAR ---
     this.barGraph.config = { ...commonConfig };
     this.barGraph.layout = {
       ...commonLayout,
-      dragmode: 'zoom',
+      dragmode: false,
       barmode: 'group',
-      xaxis: { showgrid: false, fixedrange: false },
-      yaxis: { showgrid: true, gridcolor: '#e5e7eb', fixedrange: false },
-      legend: { orientation: 'h', y: -0.2 }
+      bargap: 0.3,
+      xaxis: {
+        showgrid: false,
+        fixedrange: true,
+        tickfont: { color: this.colors.text }
+      },
+      yaxis: {
+        showgrid: true,
+        gridcolor: this.colors.grid,
+        fixedrange: true,
+        tickfont: { color: this.colors.text }
+      },
+      legend: { orientation: 'h', y: -0.2, x: 0.3 }
     };
 
     // --- TREEMAP ---
@@ -484,16 +527,35 @@ export class Dashboard implements OnInit {
         if (!labels.includes(cat)) labels.push(cat);
       });
 
+    // Ordenar por valor para cores ficarem consistentes (maiores fatias = cores primárias)
+    labels.sort((a, b) => expensesMap[b] - expensesMap[a]);
+
+    // Formatação de moeda
+    const formattedValues = labels.map(l => this.formatCurrency(expensesMap[l]));
+
     this.donutGraph.data = [{
       values: labels.map(l => expensesMap[l]),
       labels: labels,
       type: 'pie',
-      hole: 0.6,
+      hole: 0.65,
       textinfo: 'percent',
       textposition: 'inside',
       automargin: true,
-      hoverinfo: 'label+value+percent'
+      marker: {
+        colors: this.colors.palette // Usa a paleta do tema
+      },
+      text: formattedValues, // Passa valores formatados para o hover
+      hovertemplate: '<b>%{label}</b><br>%{text}<br>(%{percent})<extra></extra>',
+      textfont: {
+        color: '#ffffff',
+        weight: 600
+      }
     }];
+  }
+
+  // Helper para formatar moeda
+  formatCurrency(value: number): string {
+    return new Intl.NumberFormat('pt-BR', { style: 'currency', currency: 'BRL' }).format(value);
   }
 
   // --- AÇÕES UI ---

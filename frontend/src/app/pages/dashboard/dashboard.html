@@ -1,335 +1,311 @@
-<div class="dashboard-container">
+<div class="layout-wrapper">
 
-  <!-- TOOLBAR -->
-  <p-toolbar styleClass="custom-toolbar">
-    <div class="p-toolbar-group-start">
-      <i class="pi pi-wallet text-2xl mr-2 text-primary"></i>
-      <span class="font-bold text-xl text-900">Financeiro AI</span>
-    </div>
-
-    <div class="p-toolbar-group-end gap-2">
-      <p-button
-        label="Atualizar"
-        icon="pi pi-refresh"
-        severity="info"
-        [loading]="refreshing"
-        (onClick)="refreshData()">
-      </p-button>
-      <p-button
-        label="Conectar Conta"
-        icon="pi pi-building-columns"
-        severity="help"
-        [loading]="connecting"
-        (onClick)="connectBank()">
-      </p-button>
-      <p-button
-        label="Nova Transação"
-        icon="pi pi-plus"
-        (onClick)="showDialog()">
-      </p-button>
-      <p-button
-        label="Sair"
-        icon="pi pi-power-off"
-        severity="danger"
-        [text]="true"
-        (onClick)="logout()">
-      </p-button>
-    </div>
-  </p-toolbar>
-
-  <!-- FILTROS DE DATA -->
-  <div class="filters-section">
-
-    <div class="flex flex-column">
-      <label for="year">Ano</label>
-      <p-select
-        inputId="year"
-        [options]="years"
-        [(ngModel)]="selectedYear"
-        optionLabel="label"
-        optionValue="value"
-        (onChange)="loadData()"
-        placeholder="Selecione o ano"
-        [style]="{'width': '120px'}">
-      </p-select>
-    </div>
-    <div class="flex flex-column">
-      <label for="month">Mês</label>
-      <p-select
-        inputId="month"
-        [options]="months"
-        [(ngModel)]="selectedMonth"
-        optionLabel="label"
-        optionValue="value"
-        (onChange)="loadData()"
-        placeholder="Selecione o mês"
-        [style]="{'width': '180px'}">
-      </p-select>
-    </div>
-
-
-  </div>
-
-  <!-- KPIs -->
-  <div class="dashboard-kpis">
-    <!-- Saldo Corrente -->
-    <p-card styleClass="kpi-card">
-      <div class="kpi-header">
-        <div class="kpi-content">
-          <span class="kpi-title">Saldo Conta Corrente</span>
-          <div class="kpi-value">{{ currentBalance | currency:'BRL' }}</div>
-        </div>
-        <div class="kpi-icon blue">
+  <!-- HEADER FIXO -->
+  <header class="app-header">
+    <div class="header-content">
+      <div class="logo-area">
+        <div class="logo-icon">
           <i class="pi pi-wallet"></i>
         </div>
+        <span class="logo-text">Financeiro AI</span>
       </div>
-    </p-card>
 
-    <!-- Salário Médio -->
-    <p-card styleClass="kpi-card">
-      <div class="kpi-header">
-        <div class="kpi-content">
-          <span class="kpi-title">Média Salarial</span>
-          <div class="kpi-value">{{ averageIncome | currency:'BRL' }}</div>
+      <div class="actions-area">
+        <p-button
+          label="Conectar Conta"
+          icon="pi pi-building-columns"
+          [text]="true"
+          severity="secondary"
+          styleClass="p-button-sm"
+          [loading]="connecting"
+          (onClick)="connectBank()">
+        </p-button>
+
+        <p-button
+          label="Atualizar"
+          icon="pi pi-refresh"
+          [outlined]="true"
+          severity="secondary"
+          styleClass="p-button-sm"
+          [loading]="refreshing"
+          (onClick)="refreshData()">
+        </p-button>
+
+        <p-button
+          label="Nova Transação"
+          icon="pi pi-plus"
+          styleClass="p-button-sm"
+          (onClick)="showDialog()">
+        </p-button>
+
+        <div class="separator"></div>
+
+        <p-button
+          icon="pi pi-power-off"
+          [text]="true"
+          severity="secondary"
+          pTooltip="Sair"
+          tooltipPosition="bottom"
+          (onClick)="logout()">
+        </p-button>
+      </div>
+    </div>
+  </header>
+
+  <main class="dashboard-container">
+
+    <!-- FILTROS DE DATA -->
+    <div class="filters-section">
+      <div class="filter-group">
+        <label for="year">Ano</label>
+        <p-select
+          inputId="year"
+          [options]="years"
+          [(ngModel)]="selectedYear"
+          optionLabel="label"
+          optionValue="value"
+          (onChange)="loadData()"
+          placeholder="Ano"
+          styleClass="w-full">
+        </p-select>
+      </div>
+      <div class="filter-group">
+        <label for="month">Mês</label>
+        <p-select
+          inputId="month"
+          [options]="months"
+          [(ngModel)]="selectedMonth"
+          optionLabel="label"
+          optionValue="value"
+          (onChange)="loadData()"
+          placeholder="Mês"
+          styleClass="w-full">
+        </p-select>
+      </div>
+    </div>
+
+    <!-- KPIs -->
+    <div class="kpi-grid">
+      <!-- Saldo Corrente -->
+      <div class="kpi-card">
+        <div class="kpi-icon-wrapper blue">
+          <i class="pi pi-wallet"></i>
         </div>
-        <div class="kpi-icon green">
+        <div class="kpi-content">
+          <span class="kpi-label">Saldo em Conta</span>
+          <span class="kpi-value">{{ currentBalance | currency:'BRL' }}</span>
+        </div>
+      </div>
+
+      <!-- Salário Médio -->
+      <div class="kpi-card">
+        <div class="kpi-icon-wrapper indigo">
           <i class="pi pi-money-bill"></i>
         </div>
-      </div>
-    </p-card>
-    <!-- Investimentos -->
-    <p-card styleClass="kpi-card">
-      <div class="kpi-header">
         <div class="kpi-content">
-          <span class="kpi-title">Investimentos</span>
-          <div class="kpi-value">{{ totalInvested | currency:'BRL' }}</div>
+          <span class="kpi-label">Média Salarial</span>
+          <span class="kpi-value">{{ averageIncome | currency:'BRL' }}</span>
         </div>
-        <div class="kpi-icon purple">
+      </div>
+
+      <!-- Investimentos -->
+      <div class="kpi-card">
+        <div class="kpi-icon-wrapper purple">
           <i class="pi pi-chart-line"></i>
         </div>
-      </div>
-    </p-card>
-    <!-- Saldo do Mês -->
-    <p-card styleClass="kpi-card">
-      <div class="kpi-header">
         <div class="kpi-content">
-          <span class="kpi-title">Balanço do Mês</span>
-          <div class="kpi-value" [ngClass]="{'green': totalBalance >= 0, 'red': totalBalance < 0}">
-            {{ totalBalance | currency:'BRL' }}
-          </div>
+          <span class="kpi-label">Investimentos</span>
+          <span class="kpi-value">{{ totalInvested | currency:'BRL' }}</span>
         </div>
-        <div class="kpi-icon blue">
+      </div>
+
+      <!-- Balanço do Mês -->
+      <div class="kpi-card">
+        <div class="kpi-icon-wrapper teal">
           <i class="pi pi-calendar"></i>
         </div>
-      </div>
-    </p-card>
-
-
-
-    <!-- Receitas -->
-    <p-card styleClass="kpi-card">
-      <div class="kpi-header">
         <div class="kpi-content">
-          <span class="kpi-title">Entradas</span>
-          <div class="kpi-value green">{{ totalIncome | currency:'BRL' }}</div>
+          <span class="kpi-label">Balanço do Mês</span>
+          <span class="kpi-value" [ngClass]="{'text-green-600': totalBalance >= 0, 'text-red-600': totalBalance < 0}">
+            {{ totalBalance | currency:'BRL' }}
+          </span>
         </div>
-        <div class="kpi-icon green">
+      </div>
+
+      <!-- Entradas -->
+      <div class="kpi-card">
+        <div class="kpi-icon-wrapper green">
           <i class="pi pi-arrow-up"></i>
         </div>
-      </div>
-    </p-card>
-
-    <!-- Despesas -->
-    <p-card styleClass="kpi-card">
-      <div class="kpi-header">
         <div class="kpi-content">
-          <span class="kpi-title">Saídas</span>
-          <div class="kpi-value red">{{ totalExpense | currency:'BRL' }}</div>
+          <span class="kpi-label">Entradas</span>
+          <span class="kpi-value text-green-600">{{ totalIncome | currency:'BRL' }}</span>
         </div>
-        <div class="kpi-icon red">
+      </div>
+
+      <!-- Saídas -->
+      <div class="kpi-card">
+        <div class="kpi-icon-wrapper red">
           <i class="pi pi-arrow-down"></i>
         </div>
-      </div>
-    </p-card>
-  </div>
-
-  <!-- GRÁFICOS -->
-  <div class="dashboard-charts">
-    <!-- Gráfico de Rosca -->
-    <p-card header="Despesas por Categoria" styleClass="chart-card">
-      <plotly-plot
-        [data]="donutGraph.data"
-        [layout]="donutGraph.layout"
-        [config]="donutGraph.config"
-        [style]="{width: '100%', height: '100%'}"
-        (plotlyClick)="onChartClick($event, 'donut')">
-      </plotly-plot>
-    </p-card>
-
-    <!-- Gráfico de Barras -->
-    <p-card header="Receitas vs Despesas (12 Meses)" styleClass="chart-card">
-      <plotly-plot
-        [data]="barGraph.data"
-        [layout]="barGraph.layout"
-        [config]="barGraph.config"
-        [style]="{width: '100%', height: '100%'}"
-        (plotlyClick)="onChartClick($event, 'bar')">
-      </plotly-plot>
-    </p-card>
-
-    <!-- Gráfico Treemap (NOVO) -->
-    <p-card header="Mapa Hierárquico de Renda" styleClass="chart-card full-width">
-      <plotly-plot
-        [data]="treemapGraph.data"
-        [layout]="treemapGraph.layout"
-        [config]="treemapGraph.config"
-        [style]="{width: '100%', height: '100%'}">
-      </plotly-plot>
-    </p-card>
-  </div>
-
-  <!-- TABELA DE TRANSAÇÕES -->
-  <p-card
-    header="Minhas Transações"
-    styleClass="transactions-card overflow-visible">
-
-    <p-table
-      #dt
-      [value]="transactions"
-      [loading]="loading"
-      [paginator]="true"
-      [rows]="10"
-      [rowsPerPageOptions]="[10, 25, 50]"
-      [globalFilterFields]="['description', 'amount', 'typeLabel', 'merchantName', 'categoryName']"
-      styleClass="p-datatable-sm"
-      [tableStyle]="{ 'min-width': '60rem' }">
-
-      <!-- BUSCA -->
-      <ng-template pTemplate="caption">
-        <div class="flex justify-content-end">
-          <p-iconfield iconPosition="left">
-            <p-inputicon>
-              <i class="pi pi-search"></i>
-            </p-inputicon>
-            <input
-              pInputText
-              type="text"
-              [(ngModel)]="searchValue"
-              (input)="dt.filterGlobal($any($event.target).value, 'contains')"
-              placeholder="Buscar transação..."
-              class="p-inputtext-sm w-20rem" />
-          </p-iconfield>
+        <div class="kpi-content">
+          <span class="kpi-label">Saídas</span>
+          <span class="kpi-value text-red-600">{{ totalExpense | currency:'BRL' }}</span>
         </div>
-      </ng-template>
+      </div>
+    </div>
 
-      <!-- HEADER -->
-      <ng-template pTemplate="header">
-        <tr>
-          <th pSortableColumn="description">
-            Descrição <p-sortIcon field="description"></p-sortIcon>
-          </th>
-          <th pSortableColumn="merchantName">
-            Estabelecimento <p-sortIcon field="merchantName"></p-sortIcon>
-          </th>
-          <th pSortableColumn="categoryName">
-            Categoria <p-sortIcon field="categoryName"></p-sortIcon>
-          </th>
-          <th pSortableColumn="date">
-            Data <p-sortIcon field="date"></p-sortIcon>
-          </th>
-          <th pSortableColumn="type">
-            Tipo <p-sortIcon field="type"></p-sortIcon>
-          </th>
-          <th pSortableColumn="amount">
-            Valor <p-sortIcon field="amount"></p-sortIcon>
-          </th>
-          <th style="width: 6rem; text-align: center;">
-            Ações
-          </th>
-        </tr>
-      </ng-template>
+    <!-- GRÁFICOS -->
+    <div class="charts-grid">
+      <!-- Gráfico de Rosca -->
+      <div class="chart-card">
+        <div class="chart-header">
+          <h3>Despesas por Categoria</h3>
+        </div>
+        <div class="chart-body">
+          <plotly-plot
+            [data]="donutGraph.data"
+            [layout]="donutGraph.layout"
+            [config]="donutGraph.config"
+            [style]="{width: '100%', height: '100%'}"
+            (plotlyClick)="onChartClick($event, 'donut')">
+          </plotly-plot>
+        </div>
+      </div>
 
-      <!-- BODY -->
-      <ng-template pTemplate="body" let-t>
-        <tr>
-          <td>
-            <div class="font-bold text-900">{{ t.description }}</div>
-            <div *ngIf="t.totalInstallments" class="text-xs text-500 mt-1">
-              Parcela {{ t.currentInstallment || 1 }}/{{ t.totalInstallments }}
-            </div>
-          </td>
+      <!-- Gráfico de Barras -->
+      <div class="chart-card">
+        <div class="chart-header">
+          <h3>Receitas vs Despesas (12 Meses)</h3>
+        </div>
+        <div class="chart-body">
+          <plotly-plot
+            [data]="barGraph.data"
+            [layout]="barGraph.layout"
+            [config]="barGraph.config"
+            [style]="{width: '100%', height: '100%'}"
+            (plotlyClick)="onChartClick($event, 'bar')">
+          </plotly-plot>
+        </div>
+      </div>
 
-          <td>
-          <span *ngIf="t.merchantName" class="text-700">
-            {{ t.merchantName }}
-          </span>
-            <span *ngIf="!t.merchantName" class="text-400 italic">-</span>
-          </td>
+      <!-- Gráfico Treemap -->
+      <div class="chart-card full-width">
+        <div class="chart-header">
+          <h3>Mapa Hierárquico de Renda</h3>
+        </div>
+        <div class="chart-body">
+          <plotly-plot
+            [data]="treemapGraph.data"
+            [layout]="treemapGraph.layout"
+            [config]="treemapGraph.config"
+            [style]="{width: '100%', height: '100%'}">
+          </plotly-plot>
+        </div>
+      </div>
+    </div>
 
-          <td>
-            <p-tag
-              *ngIf="t.categoryName"
-              [value]="t.categoryName"
-              [style]="{
-              'background-color': t.categoryColor || '#f1f5f9',
-              'color': '#475569',
-              'font-weight': '600'
-            }">
-            </p-tag>
-          </td>
+    <!-- TABELA DE TRANSAÇÕES -->
+    <div class="table-card">
+      <div class="table-header-custom">
+        <h3>Minhas Transações</h3>
+        <div class="search-box">
+          <i class="pi pi-search"></i>
+          <input
+            type="text"
+            pInputText
+            [(ngModel)]="searchValue"
+            (input)="dt.filterGlobal($any($event.target).value, 'contains')"
+            placeholder="Buscar transação..." />
+        </div>
+      </div>
 
-          <td class="text-600">
-            {{ t.date | date:'dd/MM/yyyy' }}
-          </td>
+      <p-table
+        #dt
+        [value]="transactions"
+        [loading]="loading"
+        [paginator]="true"
+        [rows]="10"
+        [rowsPerPageOptions]="[10, 25, 50]"
+        [globalFilterFields]="['description', 'amount', 'typeLabel', 'merchantName', 'categoryName']"
+        styleClass="p-datatable-striped"
+        [tableStyle]="{ 'min-width': '60rem' }">
 
-          <td>
-          <span
-            [class]="t.type === 'INCOME'
-              ? 'bg-green-100 text-green-700 px-2 py-1 border-round font-bold text-xs uppercase'
-              : t.type === 'INVESTMENT'
-                ? 'bg-purple-100 text-purple-700 px-2 py-1 border-round font-bold text-xs uppercase'
-                : 'bg-red-100 text-red-700 px-2 py-1 border-round font-bold text-xs uppercase'">
-            {{ t.typeLabel }}
-          </span>
-          </td>
+        <ng-template pTemplate="header">
+          <tr>
+            <th pSortableColumn="description">Descrição <p-sortIcon field="description"></p-sortIcon></th>
+            <th pSortableColumn="merchantName">Estabelecimento <p-sortIcon field="merchantName"></p-sortIcon></th>
+            <th pSortableColumn="categoryName">Categoria <p-sortIcon field="categoryName"></p-sortIcon></th>
+            <th pSortableColumn="date">Data <p-sortIcon field="date"></p-sortIcon></th>
+            <th pSortableColumn="type">Tipo <p-sortIcon field="type"></p-sortIcon></th>
+            <th pSortableColumn="amount" class="text-right">Valor <p-sortIcon field="amount"></p-sortIcon></th>
+            <th class="text-center" style="width: 5rem"></th>
+          </tr>
+        </ng-template>
 
-          <td
-            [class]="t.type === 'INCOME'
-            ? 'text-green-600 font-bold text-lg'
-            : t.type === 'INVESTMENT'
-              ? 'text-purple-600 font-bold text-lg'
-              : 'text-red-600 font-bold text-lg'">
-            {{ t.amount | currency:'BRL' }}
-          </td>
+        <ng-template pTemplate="body" let-t>
+          <tr>
+            <td>
+              <div class="font-semibold text-900">{{ t.description }}</div>
+              <div *ngIf="t.totalInstallments" class="text-xs text-500 mt-1">
+                Parcela {{ t.currentInstallment || 1 }}/{{ t.totalInstallments }}
+              </div>
+            </td>
 
-          <!-- AÇÕES -->
-          <td style="width: 6rem; text-align: center;">
-            <p-button
-                icon="pi pi-trash"
-                [rounded]="true"
-                [text]="true"
-                severity="danger"
+            <td>
+              <span *ngIf="t.merchantName" class="text-700">{{ t.merchantName }}</span>
+              <span *ngIf="!t.merchantName" class="text-400">-</span>
+            </td>
+
+            <td>
+              <span *ngIf="t.categoryName" class="category-badge" [style.background-color]="t.categoryColor || '#f1f5f9'">
+                {{ t.categoryName }}
+              </span>
+            </td>
+
+            <td class="text-600">
+              {{ t.date | date:'dd/MM/yyyy' }}
+            </td>
+
+            <td>
+              <span [class]="'type-badge ' + t.type.toLowerCase()">
+                {{ t.typeLabel }}
+              </span>
+            </td>
+
+            <td class="text-right font-medium">
+              <span [class]="t.type === 'INCOME' ? 'text-green-600' : t.type === 'INVESTMENT' ? 'text-purple-600' : 'text-red-600'">
+                {{ t.amount | currency:'BRL' }}
+              </span>
+            </td>
+
+            <td class="text-center">
+              <button
+                class="action-btn delete"
+                (click)="deleteTransaction(t)"
                 pTooltip="Excluir"
-                tooltipPosition="left"
-                (onClick)="deleteTransaction(t)">
-            </p-button>
-          </td>
-        </tr>
-      </ng-template>
+                tooltipPosition="left">
+                <i class="pi pi-trash"></i>
+              </button>
+            </td>
+          </tr>
+        </ng-template>
 
-      <!-- EMPTY -->
-      <ng-template pTemplate="emptymessage">
-        <tr>
-          <td colspan="7" class="text-center p-6 text-500">
-            <i class="pi pi-inbox text-4xl mb-3 block text-300"></i>
-            Nenhuma transação encontrada para o período selecionado.
-          </td>
-        </tr>
-      </ng-template>
+        <ng-template pTemplate="emptymessage">
+          <tr>
+            <td colspan="7" class="text-center p-6 text-500">
+              <div class="empty-state">
+                <i class="pi pi-inbox"></i>
+                <p>Nenhuma transação encontrada.</p>
+              </div>
+            </td>
+          </tr>
+        </ng-template>
 
-    </p-table>
-  </p-card>
+      </p-table>
+    </div>
 
+  </main>
 </div>
 
 <!-- DIALOG -->
@@ -345,7 +321,7 @@
   <div class="flex flex-column gap-4 pt-2">
 
     <div class="flex flex-column gap-2">
-      <label for="description" class="font-bold text-sm text-700">Descrição</label>
+      <label for="description" class="font-semibold text-sm text-700">Descrição</label>
       <input
         pInputText
         id="description"
@@ -356,7 +332,7 @@
     </div>
 
     <div class="flex flex-column gap-2">
-      <label for="amount" class="font-bold text-sm text-700">Valor</label>
+      <label for="amount" class="font-semibold text-sm text-700">Valor</label>
       <p-inputNumber
         inputId="amount"
         [(ngModel)]="currentTransaction.amount"
@@ -370,7 +346,7 @@
     </div>
 
     <div class="flex flex-column gap-2">
-      <label for="date" class="font-bold text-sm text-700">Data</label>
+      <label for="date" class="font-semibold text-sm text-700">Data</label>
       <p-datepicker
         inputId="date"
         [(ngModel)]="currentTransaction.date"
@@ -383,7 +359,7 @@
     </div>
 
     <div class="flex flex-column gap-2">
-      <label for="type" class="font-bold text-sm text-700">Tipo</label>
+      <label for="type" class="font-semibold text-sm text-700">Tipo</label>
       <p-select
         inputId="type"
         [options]="types"
@@ -417,22 +393,24 @@
 
 </p-dialog>
 
-<!-- DIALOG DE SINCRONIZAÇÃO (AVISO AMIGÁVEL) -->
+<!-- DIALOG DE SINCRONIZAÇÃO -->
 <p-dialog
   [(visible)]="isSyncing"
   [modal]="true"
   [style]="{ width: '400px' }"
   [closable]="false"
   [draggable]="false"
-  [resizable]="false">
+  [resizable]="false"
+  styleClass="sync-dialog">
 
   <div class="flex flex-column align-items-center justify-content-center text-center gap-3 py-4">
-    <i class="pi pi-spin pi-sync text-5xl text-primary"></i>
+    <div class="spinner-wrapper">
+      <i class="pi pi-spin pi-sync text-5xl text-primary"></i>
+    </div>
     <div>
-      <h2 class="text-xl font-bold mb-2 text-900">Sincronizando seus dados</h2>
-      <p class="text-600 line-height-3 m-0">
-        Estamos conectando ao seu banco para buscar as transações e investimentos mais recentes.<br>
-        Por favor, aguarde um momento.
+      <h2 class="text-xl font-bold mb-2 text-900">Sincronizando</h2>
+      <p class="text-600 line-height-3 m-0 text-sm">
+        Conectando ao banco para buscar suas transações recentes.
       </p>
     </div>
   </div>
