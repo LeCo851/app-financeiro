@@ -9,7 +9,7 @@ export interface Transaction {
   description: string;
   amount: number;
   date: string | Date;
-  type: 'INCOME' | 'EXPENSE' | 'INVESTMENT';
+  type: 'INCOME' | 'EXPENSE' | 'INVESTMENT' | 'TRANSFER';
   source: string;
   categoryName?: string;
   categoryColor?: string;

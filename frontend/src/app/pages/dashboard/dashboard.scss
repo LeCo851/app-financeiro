@@ -132,6 +132,50 @@
   }
 }
 
+/* --- GRÁFICOS --- */
+.dashboard-charts {
+  display: grid;
+  grid-template-columns: 1fr 1fr; /* Duas colunas iguais */
+  gap: 1.5rem;
+  margin-bottom: 2rem;
+
+  /* Responsividade: Em telas menores, vira 1 coluna */
+  @media (max-width: 992px) {
+    grid-template-columns: 1fr;
+  }
+}
+
+.chart-card {
+  border-radius: 16px;
+  border: none;
+  background: #ffffff;
+  box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05), 0 2px 4px -1px rgba(0, 0, 0, 0.03);
+  height: 400px; /* Altura fixa para os gráficos */
+
+  /* Classe utilitária para ocupar largura total */
+  &.full-width {
+    grid-column: 1 / -1; /* Ocupa todas as colunas disponíveis */
+    height: 500px; /* Treemap precisa de mais altura */
+  }
+
+  ::ng-deep .p-card-header {
+    padding: 1.5rem 1.5rem 0 1.5rem;
+    font-size: 1.125rem;
+    font-weight: 700;
+    color: #1e293b;
+    background-color: #ffffff;
+  }
+
+  ::ng-deep .p-card-body {
+    padding: 1rem;
+    height: calc(100% - 60px); /* Ajusta altura do corpo */
+  }
+
+  ::ng-deep .p-card-content {
+    height: 100%;
+  }
+}
+
 /* --- TABELA --- */
 .transactions-card {
   border-radius: 16px;

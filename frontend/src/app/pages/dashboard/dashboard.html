@@ -153,6 +153,41 @@
     </p-card>
   </div>
 
+  <!-- GRÁFICOS -->
+  <div class="dashboard-charts">
+    <!-- Gráfico de Rosca -->
+    <p-card header="Despesas por Categoria" styleClass="chart-card">
+      <plotly-plot
+        [data]="donutGraph.data"
+        [layout]="donutGraph.layout"
+        [config]="donutGraph.config"
+        [style]="{width: '100%', height: '100%'}"
+        (plotlyClick)="onChartClick($event, 'donut')">
+      </plotly-plot>
+    </p-card>
+
+    <!-- Gráfico de Barras -->
+    <p-card header="Receitas vs Despesas (12 Meses)" styleClass="chart-card">
+      <plotly-plot
+        [data]="barGraph.data"
+        [layout]="barGraph.layout"
+        [config]="barGraph.config"
+        [style]="{width: '100%', height: '100%'}"
+        (plotlyClick)="onChartClick($event, 'bar')">
+      </plotly-plot>
+    </p-card>
+
+    <!-- Gráfico Treemap (NOVO) -->
+    <p-card header="Mapa Hierárquico de Renda" styleClass="chart-card full-width">
+      <plotly-plot
+        [data]="treemapGraph.data"
+        [layout]="treemapGraph.layout"
+        [config]="treemapGraph.config"
+        [style]="{width: '100%', height: '100%'}">
+      </plotly-plot>
+    </p-card>
+  </div>
+
   <!-- TABELA DE TRANSAÇÕES -->
   <p-card
     header="Minhas Transações"
@@ -165,7 +200,7 @@
       [paginator]="true"
       [rows]="10"
       [rowsPerPageOptions]="[10, 25, 50]"
-      [globalFilterFields]="['description', 'amount', 'type', 'merchantName', 'categoryName']"
+      [globalFilterFields]="['description', 'amount', 'typeLabel', 'merchantName', 'categoryName']"
       styleClass="p-datatable-sm"
       [tableStyle]="{ 'min-width': '60rem' }">
 
@@ -254,7 +289,7 @@
               : t.type === 'INVESTMENT'
                 ? 'bg-purple-100 text-purple-700 px-2 py-1 border-round font-bold text-xs uppercase'
                 : 'bg-red-100 text-red-700 px-2 py-1 border-round font-bold text-xs uppercase'">
-            {{ t.type === 'INCOME' ? 'Entrada' : t.type === 'INVESTMENT' ? 'Investimento' : t.type === 'TRANSFER' ? 'Transferência': 'Saída' }}
+            {{ t.typeLabel }}
           </span>
           </td>
 
