@@ -2,54 +2,39 @@ package br.com.leandrocoelho.backend.service.rule;
 
 import br.com.leandrocoelho.backend.model.enums.TransactionType;
 import org.springframework.stereotype.Component;
-import java.math.BigDecimal;
 
 @Component
 public class TransactionClassifier {
 
-    /**
-     * @param pluggyType "CREDIT" ou "DEBIT" (vindo direto da API)
-     * @param description Descrição para refinar (achar investimentos/transferências)
-     */
     public TransactionType classify(String pluggyType, String description) {
-
-        String desc = description != null ? description.toUpperCase().trim() : "";
+        // Normaliza para evitar problemas de Case
         boolean isCredit = "CREDIT".equalsIgnoreCase(pluggyType);
+        String desc = description != null ? description.toUpperCase().trim() : "";
 
         // =============================================================
-        // CENÁRIO 1: DINHEIRO ENTRANDO (CREDIT)
+        // CENÁRIO A: DINHEIRO ENTRANDO (CREDIT)
         // =============================================================
         if (isCredit) {
-            // Se for pagamento de fatura entrando no cartão ou estorno -> TRANSFERÊNCIA
-            if (isPaymentReceived(desc)) {
-                return TransactionType.TRANSFER;
-            }
+            // Pagamento de Fatura entrando no limite do cartão
+            if (isPaymentReceived(desc)) return TransactionType.TRANSFER;
 
-            // Se for resgate de investimento -> TRANSFERÊNCIA (ou INCOME se for só juros, mas simplificamos)
-            if (isInvestmentRedemption(desc)) {
-                return TransactionType.TRANSFER;
-            }
+            // Resgate de Investimento (Dinheiro voltando pra conta)
+            if (isInvestmentRedemption(desc)) return TransactionType.TRANSFER;
 
-            // Padrão: RECEITA
-            return TransactionType.INCOME;
+            return TransactionType.INCOME; // Padrão: Receita
         }
 
         // =============================================================
-        // CENÁRIO 2: DINHEIRO SAINDO (DEBIT)
+        // CENÁRIO B: DINHEIRO SAINDO (DEBIT)
         // =============================================================
         else {
-            // Se for dinheiro saindo para pagar a fatura -> TRANSFERÊNCIA
-            if (isBillPayment(desc)) {
-                return TransactionType.TRANSFER;
-            }
+            // Dinheiro saindo da conta para pagar a fatura
+            if (isBillPayment(desc)) return TransactionType.TRANSFER;
 
-            // Se for dinheiro saindo para Corretora/CDB -> INVESTIMENTO (Patrimônio)
-            if (isInvestmentApplication(desc)) {
-                return TransactionType.INVESTMENT;
-            }
+            // Dinheiro saindo para aplicação financeira
+            if (isInvestmentApplication(desc)) return TransactionType.INVESTMENT;
 
-            // Padrão: DESPESA
-            return TransactionType.EXPENSE;
+            return TransactionType.EXPENSE; // Padrão: Despesa
         }
     }
 
@@ -63,15 +48,17 @@ public class TransactionClassifier {
     }
 
     private boolean isInvestmentRedemption(String desc) {
-        return desc.contains("RESGATE") ||
-                (desc.contains("PROVENTOS") && desc.contains("RESGATE"));
+        return desc.contains("RESGATE");
     }
 
     private boolean isBillPayment(String desc) {
         return desc.contains("PAGAMENTO FATURA") ||
                 desc.contains("PAG FATURA") ||
                 desc.contains("PGTO FATURA") ||
-                desc.contains("DEBITO AUTOMATICO FATURA");
+                desc.contains("DEBITO AUTOMATICO FATURA")||
+                desc.contains("INT ITAU MULT")||
+                desc.contains("INT CARTAO")||
+                desc.contains("FATURA");
     }
 
     private boolean isInvestmentApplication(String desc) {

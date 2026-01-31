@@ -2,6 +2,7 @@ package br.com.leandrocoelho.backend.service;
 
 import br.com.leandrocoelho.backend.dto.response.DashboardSummaryDto;
 import br.com.leandrocoelho.backend.model.Transaction;
+import br.com.leandrocoelho.backend.model.enums.TransactionType;
 import br.com.leandrocoelho.backend.repository.AccountRepository;
 import br.com.leandrocoelho.backend.repository.TransactionRepository;
 import br.com.leandrocoelho.backend.security.UserContext;
@@ -147,7 +148,7 @@ public class CoreTransactionService {
 
         for (Transaction tx : transactions) {
             validateUserOwnership(tx, userId);
-
+            normalizeTransactionAmount(tx);
             // A) Lógica para Transações Externas (Pluggy) - UPSERT
             if (tx.getPluggyTransactionId() != null) {
                 if (existingMap.containsKey(tx.getPluggyTransactionId())) {
@@ -229,6 +230,15 @@ public class CoreTransactionService {
         }
 
         processedHashes.add(hash);
+    }
+    private void normalizeTransactionAmount(Transaction tx) {
+        // Se for DESPESA e o valor for POSITIVO, inverte o sinal
+        if (tx.getType() == TransactionType.EXPENSE
+                && tx.getAmount() != null
+                && tx.getAmount().compareTo(BigDecimal.ZERO) > 0) {
+
+            tx.setAmount(tx.getAmount().negate()); // Método .negate() é mais limpo que multiply(-1)
+        }
     }
 
 }

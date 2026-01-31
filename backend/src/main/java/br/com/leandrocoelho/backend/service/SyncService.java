@@ -87,32 +87,42 @@ public class SyncService {
     }
 
     private Transaction mapToEntity(PluggyTransactionDto dto, User user, Account account) {
-        // A) Classificação Inteligente (Define se é Receita, Despesa, Investimento ou Transferência)
-        TransactionType type = classifier.classify(dto.type(), dto.description());
+        // 1. Extração segura
+        String description = dto.description();
+        String merchantName = dto.merchant() != null ? dto.merchant().name() : "";
+        String pluggyCategoryName = (dto.merchant() != null) ? dto.merchant().category() : null;
 
-        // B) Resolução de Categoria
-        String pluggyCategoryName = null;
-        if (dto.merchant() != null && dto.merchant().category() != null) {
-            pluggyCategoryName = dto.merchant().category();
-        }
+        // CORREÇÃO: Pega o valor BRUTO, sem abs() e sem inverter sinal manualmente.
+        // Se a Pluggy mandar -50.00, salvamos -50.00. Se mandar 50.00, salvamos 50.00.
+        BigDecimal amount = dto.amount() != null ? dto.amount() : BigDecimal.ZERO;
 
-        // Usa o service refatorado para buscar ou criar categoria traduzida
-        Category category = coreCategoryService.resolveCategory(pluggyCategoryName, user, type);
+        // 2. Classificação Baseada no TIPO (CREDIT/DEBIT)
+        // Passamos o valor apenas para o classificador ter contexto, mas a decisão principal é pelo TIPO
+        TransactionType type = classifier.classify(dto.type(), description);
 
-        // C) Construção do Objeto (Builder)
+        // 3. Resolução de Categoria (Mantém a lógica da IA/Mapa)
+        Category category = coreCategoryService.resolveCategory(
+                description,
+                merchantName,
+                pluggyCategoryName,
+                user,
+                type
+        );
+
+        // 4. Construção
         return Transaction.builder()
                 .user(user)
-                .account(account) // Vincula à conta correta
+                .account(account)
                 .pluggyTransactionId(dto.id())
                 .source(TransactionSource.PLUGGY)
-                .originalDescription(dto.description())
-                .description(dto.description()) // Descrição inicial
-                .amount(dto.amount() != null ? dto.amount() : BigDecimal.ZERO) // Salva absoluto, o Type define o sinal visual
+                .originalDescription(description)
+                .description(description)
+                .amount(amount) // <--- Valor original da API
                 .date(dto.date())
                 .status(dto.status())
                 .type(type)
                 .category(category)
-                .merchantName(dto.merchant() != null ? dto.merchant().name() : null)
+                .merchantName(merchantName)
                 .paymentMethod(dto.paymentData() != null ? dto.paymentData().paymentMethod() : null)
                 .build();
     }

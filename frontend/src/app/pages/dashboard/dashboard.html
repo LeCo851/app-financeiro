@@ -39,19 +39,6 @@
 
   <!-- FILTROS DE DATA -->
   <div class="filters-section">
-    <div class="flex flex-column">
-      <label for="month">Mês</label>
-      <p-select
-        inputId="month"
-        [options]="months"
-        [(ngModel)]="selectedMonth"
-        optionLabel="label"
-        optionValue="value"
-        (onChange)="loadData()"
-        placeholder="Selecione o mês"
-        [style]="{'width': '180px'}">
-      </p-select>
-    </div>
 
     <div class="flex flex-column">
       <label for="year">Ano</label>
@@ -66,6 +53,21 @@
         [style]="{'width': '120px'}">
       </p-select>
     </div>
+    <div class="flex flex-column">
+      <label for="month">Mês</label>
+      <p-select
+        inputId="month"
+        [options]="months"
+        [(ngModel)]="selectedMonth"
+        optionLabel="label"
+        optionValue="value"
+        (onChange)="loadData()"
+        placeholder="Selecione o mês"
+        [style]="{'width': '180px'}">
+      </p-select>
+    </div>
+
+
   </div>
 
   <!-- KPIs -->
@@ -74,7 +76,7 @@
     <p-card styleClass="kpi-card">
       <div class="kpi-header">
         <div class="kpi-content">
-          <span class="kpi-title">Saldo Corrente</span>
+          <span class="kpi-title">Saldo Conta Corrente</span>
           <div class="kpi-value">{{ currentBalance | currency:'BRL' }}</div>
         </div>
         <div class="kpi-icon blue">
@@ -87,7 +89,7 @@
     <p-card styleClass="kpi-card">
       <div class="kpi-header">
         <div class="kpi-content">
-          <span class="kpi-title">Salário Médio</span>
+          <span class="kpi-title">Média Salarial</span>
           <div class="kpi-value">{{ averageIncome | currency:'BRL' }}</div>
         </div>
         <div class="kpi-icon green">
@@ -95,22 +97,6 @@
         </div>
       </div>
     </p-card>
-
-    <!-- Saldo do Mês -->
-    <p-card styleClass="kpi-card">
-      <div class="kpi-header">
-        <div class="kpi-content">
-          <span class="kpi-title">Saldo do Mês</span>
-          <div class="kpi-value" [ngClass]="{'green': totalBalance >= 0, 'red': totalBalance < 0}">
-            {{ totalBalance | currency:'BRL' }}
-          </div>
-        </div>
-        <div class="kpi-icon blue">
-          <i class="pi pi-calendar"></i>
-        </div>
-      </div>
-    </p-card>
-
     <!-- Investimentos -->
     <p-card styleClass="kpi-card">
       <div class="kpi-header">
@@ -123,12 +109,28 @@
         </div>
       </div>
     </p-card>
+    <!-- Saldo do Mês -->
+    <p-card styleClass="kpi-card">
+      <div class="kpi-header">
+        <div class="kpi-content">
+          <span class="kpi-title">Balanço do Mês</span>
+          <div class="kpi-value" [ngClass]="{'green': totalBalance >= 0, 'red': totalBalance < 0}">
+            {{ totalBalance | currency:'BRL' }}
+          </div>
+        </div>
+        <div class="kpi-icon blue">
+          <i class="pi pi-calendar"></i>
+        </div>
+      </div>
+    </p-card>
+
+
 
     <!-- Receitas -->
     <p-card styleClass="kpi-card">
       <div class="kpi-header">
         <div class="kpi-content">
-          <span class="kpi-title">Receitas</span>
+          <span class="kpi-title">Entradas</span>
           <div class="kpi-value green">{{ totalIncome | currency:'BRL' }}</div>
         </div>
         <div class="kpi-icon green">
@@ -141,7 +143,7 @@
     <p-card styleClass="kpi-card">
       <div class="kpi-header">
         <div class="kpi-content">
-          <span class="kpi-title">Despesas</span>
+          <span class="kpi-title">Saídas</span>
           <div class="kpi-value red">{{ totalExpense | currency:'BRL' }}</div>
         </div>
         <div class="kpi-icon red">
@@ -252,7 +254,7 @@
               : t.type === 'INVESTMENT'
                 ? 'bg-purple-100 text-purple-700 px-2 py-1 border-round font-bold text-xs uppercase'
                 : 'bg-red-100 text-red-700 px-2 py-1 border-round font-bold text-xs uppercase'">
-            {{ t.type === 'INCOME' ? 'Receita' : t.type === 'INVESTMENT' ? 'Investimento' : 'Despesa' }}
+            {{ t.type === 'INCOME' ? 'Entrada' : t.type === 'INVESTMENT' ? 'Investimento' : t.type === 'TRANSFER' ? 'Transferência': 'Saída' }}
           </span>
           </td>
 

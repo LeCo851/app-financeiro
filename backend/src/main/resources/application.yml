@@ -48,11 +48,11 @@ spring:
   # 7. Inteligência Artificial (Grok) - AGORA DENTRO DO BLOCO SPRING CORRETO
   ai:
     openai:
-      base-url: https://api.grok.x.ai/v1
+      base-url: https://api.groq.com/openai
       api-key: ${GROK_API_KEY}
       chat:
         options:
-          model: grok-beta
+          model: llama-3.3-70b-versatile
 
           temperature: 0.1
 pluggy:
