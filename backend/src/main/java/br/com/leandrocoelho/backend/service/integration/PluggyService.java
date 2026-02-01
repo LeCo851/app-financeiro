@@ -89,7 +89,7 @@ public class PluggyService {
                 .header("X-API-KEY",apiKey)
                 .retrieve()
                 .body(new ParameterizedTypeReference<PluggyResultDto<PluggyTransactionDto>>() {});
-        log.info("response pluggy: {}", response);
+        //log.info("response pluggy: {}", response);
         return response != null ? response.results() : List.of();
     }
 

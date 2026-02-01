@@ -1,16 +1,20 @@
 package br.com.leandrocoelho.backend.service;
 
+import br.com.leandrocoelho.backend.integration.pluggy.dto.PluggyTransactionDto;
 import br.com.leandrocoelho.backend.model.Category;
 import br.com.leandrocoelho.backend.model.User;
 import br.com.leandrocoelho.backend.model.enums.TransactionType;
 import br.com.leandrocoelho.backend.repository.CategoryRepository;
 import br.com.leandrocoelho.backend.service.ai.AiCategorizationService;
+import br.com.leandrocoelho.backend.service.rule.TransactionClassifier;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 
+import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 @Slf4j
@@ -20,6 +24,7 @@ public class CoreCategoryService {
 
     private final CategoryRepository categoryRepository;
     private final AiCategorizationService aiService;
+    private final TransactionClassifier classifier;
 
     private static final Map<String, String> CATEGORY_TRANSLATIONS = new HashMap<>();
     static {
@@ -65,6 +70,86 @@ public class CoreCategoryService {
         return findOrCreateInDb(categoryName, user, type);
     }
 
+    @Transactional
+    public Map<String, Category> resolveBatch(List<PluggyTransactionDto> dtos, User user){
+        Map<String, Category> result = new HashMap<>();
+        Map<String, String> needsAi = new HashMap<>();
+        Map<String, TransactionType> typeCache = new HashMap<>();
+
+        for (PluggyTransactionDto dto : dtos){
+            String desc= dto.description();
+            String merch = dto.merchant() != null ? dto.merchant().businessName() : "";
+            String plugyCat = dto.merchant() != null ? dto.merchant().category() : null;
+
+            TransactionType type = classifier.classify(dto.type(), desc);
+            typeCache.put(dto.id(), type);
+
+            String resolvedName = CATEGORY_TRANSLATIONS.get(plugyCat);
+
+            if(resolvedName != null){
+                result.put(dto.id(), findOrCreateInDb(resolvedName, user, type));
+
+            }else {
+                String context = desc + " " + merch;
+                needsAi.put(dto.id(),context);
+            }
+
+        }
+        if (!needsAi.isEmpty()) {
+            // Lote minúsculo para garantir que passamos no limite gratuito
+            int chunkSize = 15;
+            List<String> keys = new ArrayList<>(needsAi.keySet());
+
+            for (int i = 0; i < keys.size(); i += chunkSize) {
+                int end = Math.min(keys.size(), i + chunkSize);
+                List<String> batchKeys = keys.subList(i, end);
+
+                Map<String, String> batchMap = new HashMap<>();
+                for (String key : batchKeys) {
+                    batchMap.put(key, needsAi.get(key));
+                }
+
+                // Lógica de Retry Manual (Tenta até 3 vezes se der erro 429)
+                boolean success = false;
+                int attempts = 0;
+
+                while (!success && attempts < 3) {
+                    try {
+                        attempts++;
+                        log.info("Processando IA Chunk {}/{}. Tentativa {}. ({} itens)",
+                                (i/chunkSize) + 1, (int) Math.ceil((double)keys.size()/chunkSize), attempts, batchKeys.size());
+
+                        // Chama a IA
+                        Map<String, String> aiResults = aiService.categorizeBatch(batchMap);
+
+                        // Processa sucesso
+                        for (Map.Entry<String, String> entry : aiResults.entrySet()) {
+                            String pluggyId = entry.getKey();
+                            Category category = findOrCreateInDb(entry.getValue(), user, typeCache.getOrDefault(pluggyId, TransactionType.EXPENSE));
+                            result.put(pluggyId, category);
+                        }
+                        success = true; // Sai do while
+
+                        // Isso permite que o balde de tokens da Groq esvazie um pouco
+                        Thread.sleep(500);
+
+                    } catch (Exception e) {
+                        // Se for erro de Rate Limit (429), espera mais tempo e tenta de novo
+                        if (e.getMessage().contains("429") || e.getMessage().contains("Rate limit")) {
+                            log.warn("Rate Limit do Groq atingido. Esperando 10 segundos antes de tentar de novo...");
+                            try { Thread.sleep(10000); } catch (InterruptedException ignored) {}
+                        } else {
+                            log.error("Erro irrecuperável no Chunk IA: {}", e.getMessage());
+                            break; // Se não for Rate Limit, desiste desse chunk e segue
+                        }
+                    }
+                }
+            }
+        }
+
+        return result;
+    }
+
     private Category findOrCreateInDb(String name, User user, TransactionType type) {
         if (name == null || name.isBlank()) return null;
 
@@ -95,6 +180,8 @@ public class CoreCategoryService {
         if (n.contains("casa") || n.contains("moradia")) return "pi pi-home";
         if (n.contains("contas") || n.contains("serviços")) return "pi pi-bolt";
         if (n.contains("educa")) return "pi pi-book";
+        if (n.contains("receita") || n.contains("salário")) return "pi pi-money-bill";
+        if (n.contains("compra")) return "pi pi-shopping-bag";
 
         return "pi pi-tag";
     }

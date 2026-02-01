@@ -1,8 +1,14 @@
 package br.com.leandrocoelho.backend.service.ai;
 
+import lombok.extern.slf4j.Slf4j;
 import org.springframework.ai.chat.client.ChatClient;
 import org.springframework.stereotype.Service;
 
+import java.util.HashMap;
+import java.util.Map;
+import java.util.stream.Collectors;
+
+@Slf4j
 @Service
 public class AiCategorizationService {
 
@@ -45,9 +51,63 @@ public class AiCategorizationService {
             return cleanResponse(response);
         } catch (Exception e) {
             // Em caso de erro (sem internet, chave inválida), fallback seguro
-            System.err.println("Erro ao chamar Groq AI: " + e.getMessage());
+            log.error("Erro ao chamar Groq AI: " + e.getMessage());
             return "Outros";
         }
+    }
+
+    public Map<String, String> categorizeBatch(Map<String, String> transactionsContext){
+        String itemsList = transactionsContext.entrySet().stream()
+                .map(e -> String.format("- ID: %s | Contexto: %s", e.getKey(),e.getValue()))
+                .collect(Collectors.joining("\n"));
+
+        String prompt = String.format("""
+                Atue como um classificador financeiro em lote.
+                Categorias permitidas: [%s].
+                
+                Analise a lista abaixo e retorne APENAS um JSON no formato:
+                {
+                  "ID_DA_LINHA": "CATEGORIA_ESCOLHIDA"
+                }
+
+                Itens para classificar:
+                %s
+                
+                Regras:
+                1. Responda APENAS o JSON válido. Sem markdown, sem aspas extras.
+                2. Use "Outros" se não souber.
+                """, CATEGORIES_LIST, itemsList);
+        try {
+            String response = chatClient.prompt().user(prompt).call().content();
+
+            return parseJsonToMap(response);
+
+        }catch (Exception e){
+            log.error("Erro no batch do grok: " + e.getMessage());
+            return new HashMap<>();
+        }
+
+    }
+
+    private Map<String, String> parseJsonToMap(String json){
+        Map<String, String> result = new HashMap<>();
+
+        String clean = json.replace("{", "").replace("}", "").replace("\n", "").trim();
+
+        if(clean.isBlank()) return result;
+        String [] pairs = clean.split(",");
+        for (String pair: pairs){
+            String[] parts = pair.split(":");
+            if (parts.length == 2){
+                String key = parts[0].trim().replace("\"", "");
+                String value = parts[1].trim().replace("\"", "");
+
+                if(!CATEGORIES_LIST.contains(value)) value = "Outros";
+                result.put(key, value);
+            }
+        }
+        return result;
+
     }
 
     private String cleanResponse(String response) {

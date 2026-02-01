@@ -1,22 +1,63 @@
-/* --- VARIÁVEIS GLOBAIS (Sugestão de Design System) --- */
+/* --- VARIÁVEIS GLOBAIS (Light Mode Default) --- */
 :host {
   --primary-color: #6366f1; /* Indigo 500 */
   --primary-hover: #4f46e5;
+
   --bg-color: #f8fafc; /* Slate 50 */
   --card-bg: #ffffff;
+  --header-bg: rgba(255, 255, 255, 0.9);
+
   --text-main: #1e293b; /* Slate 800 */
   --text-secondary: #64748b; /* Slate 500 */
   --border-color: #e2e8f0; /* Slate 200 */
+
+  --table-header-bg: #f8fafc;
+  --table-row-hover: #f1f5f9; /* Slate 100 */
+  --table-row-striped: #f8fafc; /* Slate 50 */
+  --input-bg: #ffffff;
 
   --success-color: #10b981;
   --danger-color: #ef4444;
   --warning-color: #f59e0b;
   --info-color: #3b82f6;
 
+  /* KPI Icons Backgrounds (Light) */
+  --icon-bg-blue: #eff6ff;
+  --icon-bg-indigo: #eef2ff;
+  --icon-bg-purple: #faf5ff;
+  --icon-bg-teal: #f0fdfa;
+  --icon-bg-green: #f0fdf4;
+  --icon-bg-red: #fef2f2;
+
   display: block;
   background-color: var(--bg-color);
   min-height: 100vh;
   font-family: 'Inter', sans-serif;
+  transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+/* --- DARK MODE OVERRIDES --- */
+:host-context(.dark-theme) {
+  --bg-color: #0f172a; /* Slate 900 */
+  --card-bg: #1e293b; /* Slate 800 */
+  --header-bg: rgba(30, 41, 59, 0.9);
+
+  --text-main: #f1f5f9; /* Slate 100 */
+  --text-secondary: #94a3b8; /* Slate 400 */
+  --border-color: #334155; /* Slate 700 */
+
+  --table-header-bg: #1e293b; /* Slate 800 */
+  --table-row-hover: #334155; /* Slate 700 */
+  --table-row-striped: #334155; /* Slate 700 (Mesma cor do hover para consistência) */
+  --input-bg: #0f172a;
+
+  /* KPI Icons Backgrounds (Dark - More subtle/transparent) */
+  --icon-bg-blue: rgba(59, 130, 246, 0.15);
+  --icon-bg-indigo: rgba(99, 102, 241, 0.15);
+  --icon-bg-purple: rgba(168, 85, 247, 0.15);
+  --icon-bg-teal: rgba(20, 184, 166, 0.15);
+  --icon-bg-green: rgba(34, 197, 94, 0.15);
+  --icon-bg-red: rgba(239, 68, 68, 0.15);
 }
 
 /* --- LAYOUT --- */
@@ -38,11 +79,12 @@
   position: sticky;
   top: 0;
   z-index: 1000;
-  background: rgba(255, 255, 255, 0.9);
+  background: var(--header-bg);
   backdrop-filter: blur(10px);
   border-bottom: 1px solid var(--border-color);
   padding: 0.75rem 2rem;
   box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
+  transition: background-color 0.3s ease, border-color 0.3s ease;
 }
 
 .header-content {
@@ -103,6 +145,7 @@
   border: 1px solid var(--border-color);
   box-shadow: 0 1px 2px 0 rgba(0, 0, 0, 0.05);
   max-width: fit-content;
+  transition: background-color 0.3s ease, border-color 0.3s ease;
 
   .filter-group {
     display: flex;
@@ -137,7 +180,7 @@
   display: flex;
   align-items: center;
   gap: 1rem;
-  transition: transform 0.2s, box-shadow 0.2s;
+  transition: transform 0.2s, box-shadow 0.2s, background-color 0.3s ease, border-color 0.3s ease;
 
   &:hover {
     transform: translateY(-2px);
@@ -154,13 +197,14 @@
   justify-content: center;
   font-size: 1.25rem;
   flex-shrink: 0;
+  transition: background-color 0.3s ease;
 
-  &.blue { background: #eff6ff; color: #3b82f6; }
-  &.indigo { background: #eef2ff; color: #6366f1; }
-  &.purple { background: #faf5ff; color: #a855f7; }
-  &.teal { background: #f0fdfa; color: #14b8a6; }
-  &.green { background: #f0fdf4; color: #22c55e; }
-  &.red { background: #fef2f2; color: #ef4444; }
+  &.blue { background: var(--icon-bg-blue); color: #3b82f6; }
+  &.indigo { background: var(--icon-bg-indigo); color: #6366f1; }
+  &.purple { background: var(--icon-bg-purple); color: #a855f7; }
+  &.teal { background: var(--icon-bg-teal); color: #14b8a6; }
+  &.green { background: var(--icon-bg-green); color: #22c55e; }
+  &.red { background: var(--icon-bg-red); color: #ef4444; }
 }
 
 .kpi-content {
@@ -202,6 +246,7 @@
   display: flex;
   flex-direction: column;
   height: 420px;
+  transition: background-color 0.3s ease, border-color 0.3s ease;
 
   &.full-width {
     grid-column: 1 / -1;
@@ -234,6 +279,7 @@
   border: 1px solid var(--border-color);
   box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.05);
   overflow: hidden;
+  transition: background-color 0.3s ease, border-color 0.3s ease;
 }
 
 .table-header-custom {
@@ -266,13 +312,25 @@
       width: 100%;
       padding-left: 2.5rem;
       border-radius: 8px;
+      background-color: var(--input-bg);
+      color: var(--text-main);
+      border: 1px solid var(--border-color);
+
+      &:focus {
+        border-color: var(--primary-color);
+      }
     }
   }
 }
 
 ::ng-deep .p-datatable {
+  .p-datatable-header {
+    background: var(--card-bg);
+    border: none;
+  }
+
   .p-datatable-thead > tr > th {
-    background: #f8fafc;
+    background: var(--table-header-bg);
     color: var(--text-secondary);
     font-weight: 600;
     font-size: 0.875rem;
@@ -281,6 +339,10 @@
   }
 
   .p-datatable-tbody > tr {
+    background: var(--card-bg);
+    color: var(--text-main);
+    transition: background-color 0.2s;
+
     > td {
       padding: 1rem 1.5rem;
       border-bottom: 1px solid var(--border-color);
@@ -288,8 +350,57 @@
       font-size: 0.925rem;
     }
 
+    &:hover {
+      background-color: var(--table-row-hover) !important;
+    }
+
     &:last-child > td {
       border-bottom: none;
+    }
+  }
+
+  /* Zebra Striping Customizado - Sobrescrevendo o padrão do PrimeNG */
+  &.p-datatable-striped .p-datatable-tbody > tr:nth-child(even) {
+    background-color: var(--table-row-striped);
+    color: var(--text-main);
+
+    > td {
+      color: var(--text-main);
+    }
+
+    &:hover {
+      background-color: var(--table-row-hover) !important;
+    }
+  }
+
+  /* Garantindo que as linhas ímpares tenham o fundo correto */
+  &.p-datatable-striped .p-datatable-tbody > tr:nth-child(odd) {
+    background-color: var(--card-bg);
+    color: var(--text-main);
+
+    > td {
+      color: var(--text-main);
+    }
+
+    &:hover {
+      background-color: var(--table-row-hover) !important;
+    }
+  }
+
+  .p-paginator {
+    background: var(--card-bg);
+    border-top: 1px solid var(--border-color);
+    color: var(--text-secondary);
+
+    .p-paginator-element {
+      color: var(--text-secondary);
+      &:hover {
+        background: var(--table-row-hover);
+      }
+      &.p-highlight {
+        background: var(--primary-color);
+        color: white;
+      }
     }
   }
 }
@@ -328,12 +439,12 @@
   color: var(--text-secondary);
 
   &:hover {
-    background: #f1f5f9;
+    background: var(--table-row-hover);
     color: var(--text-main);
   }
 
   &.delete:hover {
-    background: #fee2e2;
+    background: rgba(239, 68, 68, 0.1);
     color: #ef4444;
   }
 }
@@ -348,11 +459,72 @@
 
   i {
     font-size: 3rem;
-    color: #cbd5e1;
+    color: var(--text-secondary);
+    opacity: 0.5;
   }
 
   p {
     margin: 0;
     color: var(--text-secondary);
+  }
+}
+
+/* --- PRIMENG OVERRIDES FOR DARK MODE --- */
+:host-context(.dark-theme) {
+  ::ng-deep {
+    .p-inputtext, .p-inputnumber-input, .p-select {
+      background-color: var(--input-bg);
+      border-color: var(--border-color);
+      color: var(--text-main);
+    }
+
+    /* Correção para o texto do Select no modo escuro */
+    .p-select .p-select-label {
+      color: var(--text-main);
+    }
+
+    .p-select-panel {
+      background-color: var(--card-bg);
+      border-color: var(--border-color);
+
+      .p-select-item {
+        color: var(--text-main);
+        &:hover {
+          background-color: var(--table-row-hover);
+        }
+        &.p-highlight {
+          background-color: var(--primary-color);
+          color: white;
+        }
+      }
+    }
+
+    .p-dialog {
+      .p-dialog-header, .p-dialog-content, .p-dialog-footer {
+        background-color: var(--card-bg);
+        color: var(--text-main);
+        border-color: var(--border-color);
+      }
+    }
+
+    .p-datepicker {
+      background-color: var(--card-bg);
+      border-color: var(--border-color);
+
+      .p-datepicker-header {
+        background-color: var(--card-bg);
+        color: var(--text-main);
+        border-bottom-color: var(--border-color);
+      }
+
+      table td {
+        > span {
+          color: var(--text-main);
+          &.p-highlight {
+            background-color: var(--primary-color);
+          }
+        }
+      }
+    }
   }
 }

@@ -1,5 +1,5 @@
-import { Component, OnInit, ViewChild } from '@angular/core';
-import { CommonModule } from '@angular/common';
+import { Component, OnInit, ViewChild, Renderer2, Inject, PLATFORM_ID } from '@angular/core';
+import { CommonModule, isPlatformBrowser } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 
 // PrimeNG Modules
@@ -89,6 +89,7 @@ export class Dashboard implements OnInit {
   // --- CONTROLE UI ---
   displayDialog = false;
   searchValue: string | undefined;
+  isDarkMode = false;
 
   // --- FILTROS DE DATA ---
   selectedYear: number = new Date().getFullYear();
@@ -151,14 +152,73 @@ export class Dashboard implements OnInit {
     private authService: AuthService,
     private transactionService: TransactionService,
     private openFinanceService: OpenFinanceService,
-    private investmentService: InvestmentService
+    private investmentService: InvestmentService,
+    private renderer: Renderer2,
+    @Inject(PLATFORM_ID) private platformId: Object
   ) {}
 
   ngOnInit() {
+    this.initTheme();
     this.initYears();
     this.initChartsConfig();
     this.loadData();
     this.loadHistoryData();
+  }
+
+  // --- THEME LOGIC ---
+  initTheme() {
+    if (isPlatformBrowser(this.platformId)) {
+      const savedTheme = localStorage.getItem('theme');
+      if (savedTheme === 'dark') {
+        this.isDarkMode = true;
+        this.renderer.addClass(document.body, 'dark-theme');
+      }
+    }
+  }
+
+  toggleTheme() {
+    this.isDarkMode = !this.isDarkMode;
+    if (this.isDarkMode) {
+      this.renderer.addClass(document.body, 'dark-theme');
+      localStorage.setItem('theme', 'dark');
+    } else {
+      this.renderer.removeClass(document.body, 'dark-theme');
+      localStorage.setItem('theme', 'light');
+    }
+    this.updateChartsTheme();
+  }
+
+  updateChartsTheme() {
+    const textColor = this.isDarkMode ? '#94a3b8' : '#64748b'; // Slate 400 vs 500
+    const gridColor = this.isDarkMode ? '#334155' : '#f1f5f9'; // Slate 700 vs 100
+    const bgColor = this.isDarkMode ? '#1e293b' : '#ffffff'; // Slate 800 vs White (Tooltip)
+
+    const updateLayout = (layout: any) => {
+      layout.font = { ...layout.font, color: textColor };
+      if (layout.xaxis) {
+        layout.xaxis.tickfont = { color: textColor };
+        layout.xaxis.gridcolor = gridColor;
+      }
+      if (layout.yaxis) {
+        layout.yaxis.tickfont = { color: textColor };
+        layout.yaxis.gridcolor = gridColor;
+      }
+      layout.hoverlabel = {
+        ...layout.hoverlabel,
+        bgcolor: bgColor,
+        bordercolor: gridColor,
+        font: { color: this.isDarkMode ? '#f1f5f9' : '#1e293b' }
+      };
+    };
+
+    updateLayout(this.donutGraph.layout);
+    updateLayout(this.barGraph.layout);
+    updateLayout(this.treemapGraph.layout);
+
+    // Força atualização dos gráficos
+    this.donutGraph = { ...this.donutGraph };
+    this.barGraph = { ...this.barGraph };
+    this.treemapGraph = { ...this.treemapGraph };
   }
 
   initYears() {
@@ -301,13 +361,14 @@ export class Dashboard implements OnInit {
   updateTreemap(transactions: Transaction[]) {
     const nodes = new Map<string, { id: string, label: string, parent: string, value: number, color: string }>();
 
-    // Adiciona nó Raiz
-    nodes.set("Histórico", { id: "Histórico", label: "Histórico", parent: "", value: 0, color: "#f8fafc" });
+    // Cria dois ramos principais na raiz para separar totalmente as árvores
+    nodes.set("Receitas", { id: "Receitas", label: "Receitas", parent: "", value: 0, color: this.colors.success });
+    nodes.set("Despesas", { id: "Despesas", label: "Despesas", parent: "", value: 0, color: this.colors.danger });
 
     const processedIds = new Set<string>();
 
     transactions.forEach(t => {
-      if (t.type === 'TRANSFER') return;
+      if (t.type === 'TRANSFER' || t.type === 'INVESTMENT') return;
       if (t.id && processedIds.has(t.id)) return;
       if (t.id) processedIds.add(t.id);
 
@@ -325,57 +386,63 @@ export class Dashboard implements OnInit {
 
       const monthName = this.months.find(m => m.value === month)?.label || 'Mês';
       const category = (t.categoryName || 'Sem Categoria').trim();
-      const type = t.type;
       const amount = Math.abs(t.amount);
 
-      const yearId = `Y-${year}`;
-      const monthId = `M-${year}-${month}`;
-      const catId = `C-${year}-${month}-${category}`;
-      const leafId = `L-${year}-${month}-${category}-${type}`;
+      // Define a raiz baseada no tipo
+      const rootKey = t.type === 'INCOME' ? 'Receitas' : 'Despesas';
+
+      // IDs Hierárquicos
+      const yearId = `${rootKey}-${year}`;
+      const monthId = `${rootKey}-${year}-${month}`;
+      const catId = `${rootKey}-${year}-${month}-${category}`;
+
+      // Cores de fundo (Tons pastéis mais suaves)
+      let yearColor, monthColor, catColor;
+
+      if (t.type === 'INCOME') {
+        yearColor = '#ecfdf5'; // Emerald-50
+        monthColor = '#a7f3d0'; // Emerald-200
+        catColor = '#6ee7b7';   // Emerald-300
+      } else {
+        yearColor = '#fef2f2'; // Red-50
+        monthColor = '#fecaca'; // Red-200
+        catColor = '#fca5a5';   // Red-300
+      }
 
       // 1. Nó ANO
       if (!nodes.has(yearId)) {
-        nodes.set(yearId, { id: yearId, label: `${year}`, parent: "Histórico", value: 0, color: "#f1f5f9" });
+        nodes.set(yearId, {
+          id: yearId,
+          label: `${year}`,
+          parent: rootKey,
+          value: 0,
+          color: yearColor
+        });
       }
 
       // 2. Nó MÊS
       if (!nodes.has(monthId)) {
-        nodes.set(monthId, { id: monthId, label: monthName, parent: yearId, value: 0, color: "#e2e8f0" });
-      }
-
-      // 3. Nó CATEGORIA
-      if (!nodes.has(catId)) {
-        nodes.set(catId, { id: catId, label: category, parent: monthId, value: 0, color: "#ffffff" });
-      }
-
-      // 4. Nó FOLHA (Tipo)
-      if (!nodes.has(leafId)) {
-        let label = 'Outro';
-        let color = '#94a3b8';
-
-        if (type === 'INCOME') {
-          label = 'Receita';
-          color = this.colors.success;
-        } else if (type === 'EXPENSE') {
-          label = 'Despesa';
-          color = this.colors.danger;
-        } else if (type === 'INVESTMENT') {
-          label = 'Investimento';
-          color = this.colors.investment;
-        }
-
-        nodes.set(leafId, {
-          id: leafId,
-          label: label,
-          parent: catId,
+        nodes.set(monthId, {
+          id: monthId,
+          label: monthName,
+          parent: yearId,
           value: 0,
-          color: color
+          color: monthColor
         });
       }
 
-      const leafNode = nodes.get(leafId)!;
-      leafNode.value += amount;
+      // 3. Nó CATEGORIA (Folha final)
+      if (!nodes.has(catId)) {
+        nodes.set(catId, {
+          id: catId,
+          label: category,
+          parent: monthId,
+          value: 0,
+          color: catColor
+        });
+      }
 
+      // Soma valor na categoria e propaga para cima
       const catNode = nodes.get(catId)!;
       catNode.value += amount;
 
@@ -385,7 +452,7 @@ export class Dashboard implements OnInit {
       const yearNode = nodes.get(yearId)!;
       yearNode.value += amount;
 
-      const rootNode = nodes.get("Histórico")!;
+      const rootNode = nodes.get(rootKey)!;
       rootNode.value += amount;
     });
 
@@ -412,11 +479,12 @@ export class Dashboard implements OnInit {
       parents: parents,
       values: values,
       marker: { colors: colors },
-      text: formattedValues, // Passa valores formatados
-      textinfo: 'label+text', // Mostra Label + Valor Formatado
+      text: formattedValues,
+      textinfo: 'label+text',
       branchvalues: 'total',
       hovertemplate: '<b>%{label}</b><br>%{text}<br><extra></extra>',
-      tiling: { packing: 'squarify' }
+      tiling: { packing: 'squarify' },
+      pathbar: { visible: true }
     }];
   }
 
@@ -459,8 +527,9 @@ export class Dashboard implements OnInit {
   initChartsConfig() {
     const commonConfig = {
       responsive: true,
-      displayModeBar: false, // Limpa a barra de ferramentas para visual mais clean
-      scrollZoom: false,
+      displayModeBar: 'hover', // Reativado: mostra a barra ao passar o mouse
+      scrollZoom: true, // Reativado: permite zoom
+      modeBarButtonsToRemove: ['lasso2d', 'select2d', 'sendDataToCloud'] // Remove botões desnecessários
     };
 
     const commonLayout = {
@@ -490,18 +559,18 @@ export class Dashboard implements OnInit {
     this.barGraph.config = { ...commonConfig };
     this.barGraph.layout = {
       ...commonLayout,
-      dragmode: false,
+      dragmode: 'zoom', // Reativado: permite zoom/pan
       barmode: 'group',
       bargap: 0.3,
       xaxis: {
         showgrid: false,
-        fixedrange: true,
+        fixedrange: false, // Reativado: permite mover o eixo
         tickfont: { color: this.colors.text }
       },
       yaxis: {
         showgrid: true,
         gridcolor: this.colors.grid,
-        fixedrange: true,
+        fixedrange: false, // Reativado: permite mover o eixo
         tickfont: { color: this.colors.text }
       },
       legend: { orientation: 'h', y: -0.2, x: 0.3 }

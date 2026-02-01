@@ -12,6 +12,17 @@
 
       <div class="actions-area">
         <p-button
+          [icon]="isDarkMode ? 'pi pi-sun' : 'pi pi-moon'"
+          [text]="true"
+          severity="secondary"
+          [pTooltip]="isDarkMode ? 'Modo Claro' : 'Modo Escuro'"
+          tooltipPosition="bottom"
+          (onClick)="toggleTheme()">
+        </p-button>
+
+        <div class="separator"></div>
+
+        <p-button
           label="Conectar Conta"
           icon="pi pi-building-columns"
           [text]="true"

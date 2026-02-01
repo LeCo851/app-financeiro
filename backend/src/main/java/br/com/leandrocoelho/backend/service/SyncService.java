@@ -19,6 +19,7 @@ import org.springframework.transaction.annotation.Transactional;
 import java.math.BigDecimal;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 import java.util.stream.Collectors;
 
@@ -67,17 +68,24 @@ public class SyncService {
                 // 2. Sincroniza/Salva a Conta localmente
                 Account account = accountService.syncAccount(accountDto, user);
 
-                // 3. Busca Transações dessa conta
+                // 3. Busca Transações dessa conta na API
                 List<PluggyTransactionDto> pluggyTransactions = pluggyService.getTransactions(accountDto.id());
 
                 if (pluggyTransactions.isEmpty()) continue;
 
-                // 4. Mapeia DTOs para Entidades (Aplicando Regras de Negócio)
+                // =================================================================
+                // 4. OTIMIZAÇÃO IA: RESOLVE CATEGORIAS EM LOTE (Batch)
+                // =================================================================
+                // Envia todas as transações de uma vez para o CoreCategoryService.
+                // Ele tenta Mapa -> Banco -> e manda o que sobrar num único JSON para o Groq.
+                Map<String, Category> categoryMap = coreCategoryService.resolveBatch(pluggyTransactions, user);
+
+                // 5. Mapeia DTOs para Entidades (Passando o mapa de categorias já resolvido)
                 List<Transaction> transactionsToSave = pluggyTransactions.stream()
-                        .map(dto -> mapToEntity(dto, user, account))
+                        .map(dto -> mapToEntity(dto, user, account, categoryMap))
                         .collect(Collectors.toList());
 
-                // 5. Salva em Lote (Mais performático que salvar um por um)
+                // 6. Salva em Lote (CoreService aplica regras de normalização de sinal aqui)
                 coreTransactionService.saveTransactionsBatch(transactionsToSave);
 
             } catch (Exception e) {
@@ -86,28 +94,20 @@ public class SyncService {
         }
     }
 
-    private Transaction mapToEntity(PluggyTransactionDto dto, User user, Account account) {
+    private Transaction mapToEntity(PluggyTransactionDto dto, User user, Account account, Map<String, Category> categoryMap) {
         // 1. Extração segura
         String description = dto.description();
         String merchantName = dto.merchant() != null ? dto.merchant().name() : "";
-        String pluggyCategoryName = (dto.merchant() != null) ? dto.merchant().category() : null;
 
-        // CORREÇÃO: Pega o valor BRUTO, sem abs() e sem inverter sinal manualmente.
-        // Se a Pluggy mandar -50.00, salvamos -50.00. Se mandar 50.00, salvamos 50.00.
+        // Valor Bruto (A normalização de sinal Expense (-) acontece no saveTransactionsBatch)
         BigDecimal amount = dto.amount() != null ? dto.amount() : BigDecimal.ZERO;
 
         // 2. Classificação Baseada no TIPO (CREDIT/DEBIT)
-        // Passamos o valor apenas para o classificador ter contexto, mas a decisão principal é pelo TIPO
         TransactionType type = classifier.classify(dto.type(), description);
 
-        // 3. Resolução de Categoria (Mantém a lógica da IA/Mapa)
-        Category category = coreCategoryService.resolveCategory(
-                description,
-                merchantName,
-                pluggyCategoryName,
-                user,
-                type
-        );
+        // 3. Recuperação da Categoria (Instantânea via Map)
+        // Se por acaso não veio no map (raro), passamos null e o sistema lida depois
+        Category category = categoryMap.getOrDefault(dto.id(), null);
 
         // 4. Construção
         return Transaction.builder()
@@ -117,7 +117,7 @@ public class SyncService {
                 .source(TransactionSource.PLUGGY)
                 .originalDescription(description)
                 .description(description)
-                .amount(amount) // <--- Valor original da API
+                .amount(amount)
                 .date(dto.date())
                 .status(dto.status())
                 .type(type)
