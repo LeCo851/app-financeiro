@@ -48,7 +48,7 @@
 
   --table-header-bg: #1e293b; /* Slate 800 */
   --table-row-hover: #334155; /* Slate 700 */
-  --table-row-striped: #334155; /* Slate 700 (Mesma cor do hover para consistência) */
+  --table-row-striped: #253045; /* Slate 750 (Custom dark stripe - Distinct from card-bg) */
   --input-bg: #0f172a;
 
   /* KPI Icons Backgrounds (Dark - More subtle/transparent) */
@@ -525,6 +525,30 @@
           }
         }
       }
+    }
+
+    /* FORÇA BRUTA PARA TABELA NO MODO ESCURO */
+    .p-datatable-striped .p-datatable-tbody > tr:nth-child(odd) {
+      background-color: var(--card-bg) !important;
+      color: var(--text-main) !important;
+
+      > td {
+        color: var(--text-main) !important;
+      }
+    }
+
+    .p-datatable-striped .p-datatable-tbody > tr:nth-child(even) {
+      background-color: var(--table-row-striped) !important;
+      color: var(--text-main) !important;
+
+      > td {
+        color: var(--text-main) !important;
+      }
+    }
+
+    /* Mantém o hover funcionando */
+    .p-datatable-tbody > tr:hover {
+      background-color: var(--table-row-hover) !important;
     }
   }
 }
