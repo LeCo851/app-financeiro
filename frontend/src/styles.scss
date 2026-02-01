@@ -5,37 +5,37 @@
    ========================================= */
 
 :root {
-  /* --- CORES PRINCIPAIS --- */
-  --primary-color: #6366f1; /* Indigo 500 */
+  /* --- CORES PRINCIPAIS (Suavizadas - Cinza/Azulado) --- */
+  --primary-color: #6366f1; /* Indigo 500 (Mantido para destaque) */
   --primary-hover: #4f46e5;
 
-  /* --- FUNDOS & SUPERFÍCIES (LIGHT) --- */
-  --bg-color: #f8fafc; /* Slate 50 */
+  /* --- FUNDOS & SUPERFÍCIES (LIGHT - Cinza Claro Pastel) --- */
+  --bg-color: #f3f4f6; /* Gray 100 - Cinza muito claro e neutro */
   --card-bg: #ffffff;
   --header-bg: rgba(255, 255, 255, 0.9);
-  --input-bg: #ffffff;
+  --input-bg: #f9fafb; /* Gray 50 */
 
-  /* --- TEXTO & BORDAS (LIGHT) --- */
-  --text-main: #1e293b; /* Slate 800 */
-  --text-secondary: #64748b; /* Slate 500 */
-  --border-color: #e2e8f0; /* Slate 200 */
+  /* --- TEXTO & BORDAS (LIGHT - Contraste Suave) --- */
+  --text-main: #374151; /* Gray 700 - Cinza escuro suave */
+  --text-secondary: #6b7280; /* Gray 500 */
+  --border-color: #e5e7eb; /* Gray 200 */
 
   /* --- TABELA (LIGHT) --- */
-  --table-header-bg: #f8fafc;
-  --table-row-hover: #f1f5f9; /* Slate 100 */
-  --table-row-striped: #f8fafc; /* Slate 50 */
+  --table-header-bg: #f9fafb; /* Gray 50 */
+  --table-row-hover: #f3f4f6; /* Gray 100 */
+  --table-row-striped: #f9fafb; /* Gray 50 */
 
-  /* --- STATUS --- */
-  --success-color: #10b981;
-  --danger-color: #ef4444;
-  --warning-color: #f59e0b;
-  --info-color: #3b82f6;
+  /* --- STATUS (Pastéis Suaves) --- */
+  --success-color: #34d399; /* Emerald 400 */
+  --danger-color: #f87171; /* Red 400 */
+  --warning-color: #fbbf24; /* Amber 400 */
+  --info-color: #60a5fa; /* Blue 400 */
 
   /* --- BADGES (LIGHT) --- */
-  --badge-text: #475569;
-  --badge-bg-default: #f1f5f9;
+  --badge-text: #4b5563; /* Gray 600 */
+  --badge-bg-default: #e5e7eb; /* Gray 200 */
 
-  /* --- KPI ICONS (LIGHT) --- */
+  /* --- KPI ICONS (LIGHT - Tons Pastéis Claros) --- */
   --icon-bg-blue: #eff6ff;
   --icon-bg-indigo: #eef2ff;
   --icon-bg-purple: #faf5ff;

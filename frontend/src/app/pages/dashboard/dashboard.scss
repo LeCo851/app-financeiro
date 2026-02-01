@@ -363,8 +363,8 @@
   border-radius: 999px;
   font-size: 0.75rem;
   font-weight: 600;
-  color: var(--badge-text);
-  background-color: var(--badge-bg-default);
+  /* Removido o uso de variáveis de tema para cor e fundo,
+     pois elas são definidas inline no HTML com base na categoria */
   display: inline-block;
 }
 
@@ -448,11 +448,7 @@
     background-color: var(--table-row-hover) !important;
   }
 
-  /* Correção de contraste para badges de categoria no modo escuro */
-  .category-badge {
-    color: var(--badge-text) !important;
-    background-color: var(--badge-bg-default) !important;
-  }
+  /* REMOVIDO: O override que forçava cores fixas nas badges de categoria */
 }
 :host {
   background-color: var(--bg-color);
