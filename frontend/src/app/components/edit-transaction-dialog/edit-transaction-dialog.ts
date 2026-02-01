@@ -6,7 +6,6 @@ import { ButtonModule } from 'primeng/button';
 import { SelectModule } from 'primeng/select';
 import { InputTextModule } from 'primeng/inputtext';
 import { TransactionType } from '../../models/Transaction.model';
-// Seus Services (Caminhos ajustados para sua estrutura)
 import { TransactionService } from '../../services/transaction.service';
 import { CategoryService } from '../../services/category.service';
 
@@ -47,19 +46,7 @@ export class EditTransactionDialog implements OnInit {
   });
 
   ngOnInit() {
-    const tx = this.config.data;
-
-    // 1. Carrega dados no form
-    if (tx) {
-      this.form.patchValue({
-        description: tx.description,
-        type: tx.type,
-        // Atenção aqui: verifique se seu objeto tx vem como 'category: {id: ...}' ou 'categoryId'
-        categoryId: tx.category?.id || tx.categoryId
-      });
-    }
-
-    // 2. Busca categorias do banco
+    // 1. Busca categorias PRIMEIRO para garantir que o dropdown tenha opções
     this.categoryService.findAll().subscribe({
       next: (data) => {
         this.categories = data.map(c => ({
@@ -68,19 +55,45 @@ export class EditTransactionDialog implements OnInit {
           icon: c.icon,
           color: c.color
         }));
+
+        // 2. DEPOIS carrega os dados da transação no form
+        this.loadTransactionData();
       },
       error: (err) => console.error('Erro ao buscar categorias', err)
     });
+  }
+
+  loadTransactionData() {
+    const tx = this.config.data;
+    if (tx) {
+      // Tenta encontrar o ID da categoria de várias formas possíveis
+      let catId = '';
+
+      if (tx.category && tx.category.id) {
+        catId = tx.category.id;
+      } else if (tx.categoryId) {
+        catId = tx.categoryId;
+      } else if (tx.categoryName) {
+        // Fallback: tenta encontrar pelo nome se o ID não estiver disponível
+        const found = this.categories.find(c => c.label === tx.categoryName);
+        if (found) catId = found.value;
+      }
+
+      this.form.patchValue({
+        description: tx.description,
+        type: tx.type,
+        categoryId: catId
+      });
+    }
   }
 
   save() {
     if (this.form.valid) {
       const id = this.config.data.id;
 
-      // CORREÇÃO AQUI: Tipagem explícita
       const payload = {
         description: this.form.value.description as string,
-        type: this.form.value.type as TransactionType, // <--- O PULO DO GATO
+        type: this.form.value.type as TransactionType,
         categoryId: this.form.value.categoryId as string
       };
 

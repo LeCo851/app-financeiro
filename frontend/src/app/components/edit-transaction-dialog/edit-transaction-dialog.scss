@@ -1,17 +1,78 @@
-.field {
-  margin-bottom: 1.5rem;
+/* --- VARIÁVEIS LOCAIS (Herdam do tema global) --- */
+:host {
+  display: block;
 }
 
-label {
-  display: block;
-  margin-bottom: 0.5rem;
-  font-weight: 600;
-  color: #334155;
+.dialog-form {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  padding-top: 0.5rem;
 }
 
-small {
-  color: #64748b;
-  font-size: 0.875rem;
-  display: block;
-  margin-top: 0.25rem;
+.form-group {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+
+  label {
+    font-size: 0.875rem;
+    font-weight: 600;
+    color: var(--text-main, #1e293b);
+  }
+
+  .helper-text {
+    font-size: 0.75rem;
+    color: var(--text-secondary, #64748b);
+    margin-top: 0.25rem;
+  }
+}
+
+/* --- CATEGORY ITEM (Dropdown) --- */
+.category-item {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+}
+
+.category-icon {
+  width: 32px;
+  height: 32px;
+  border-radius: 8px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1rem;
+
+  &.small {
+    width: 24px;
+    height: 24px;
+    font-size: 0.875rem;
+    border-radius: 6px;
+  }
+}
+
+/* --- FOOTER --- */
+.dialog-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 0.75rem;
+  margin-top: 1rem;
+  padding-top: 1.5rem;
+  border-top: 1px solid var(--border-color, #e2e8f0);
+}
+
+/* --- DARK MODE SUPPORT (Via contexto global) --- */
+:host-context(.dark-theme) {
+  .form-group label {
+    color: var(--text-main);
+  }
+
+  .helper-text {
+    color: var(--text-secondary);
+  }
+
+  .dialog-footer {
+    border-top-color: var(--border-color);
+  }
 }

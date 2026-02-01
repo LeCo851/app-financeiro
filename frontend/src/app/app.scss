@@ -1,8 +1,235 @@
-body{
-  margin: 0;
-  font-family: var(--font-family), serif;
-  background-color: var(--surface-ground);
-
-}
- // Estrutura base
 @import "primeicons/primeicons.css";
+
+/* =========================================
+   VARIÁVEIS GLOBAIS DE TEMA (CSS Variables)
+   ========================================= */
+
+:root {
+  /* --- CORES PRINCIPAIS --- */
+  --primary-color: #6366f1; /* Indigo 500 */
+  --primary-hover: #4f46e5;
+
+  /* --- FUNDOS & SUPERFÍCIES (LIGHT) --- */
+  --bg-color: #f8fafc; /* Slate 50 */
+  --card-bg: #ffffff;
+  --header-bg: rgba(255, 255, 255, 0.9);
+  --input-bg: #ffffff;
+
+  /* --- TEXTO & BORDAS (LIGHT) --- */
+  --text-main: #1e293b; /* Slate 800 */
+  --text-secondary: #64748b; /* Slate 500 */
+  --border-color: #e2e8f0; /* Slate 200 */
+
+  /* --- TABELA (LIGHT) --- */
+  --table-header-bg: #f8fafc;
+  --table-row-hover: #f1f5f9; /* Slate 100 */
+  --table-row-striped: #f8fafc; /* Slate 50 */
+
+  /* --- STATUS --- */
+  --success-color: #10b981;
+  --danger-color: #ef4444;
+  --warning-color: #f59e0b;
+  --info-color: #3b82f6;
+
+  /* --- BADGES (LIGHT) --- */
+  --badge-text: #475569;
+  --badge-bg-default: #f1f5f9;
+
+  /* --- KPI ICONS (LIGHT) --- */
+  --icon-bg-blue: #eff6ff;
+  --icon-bg-indigo: #eef2ff;
+  --icon-bg-purple: #faf5ff;
+  --icon-bg-teal: #f0fdfa;
+  --icon-bg-green: #f0fdf4;
+  --icon-bg-red: #fef2f2;
+}
+
+/* =========================================
+   MODO ESCURO (DARK THEME)
+   ========================================= */
+
+body.dark-theme {
+  /* --- FUNDOS & SUPERFÍCIES (DARK) --- */
+  --bg-color: #0f172a; /* Slate 900 */
+  --card-bg: #1e293b; /* Slate 800 */
+  --header-bg: rgba(30, 41, 59, 0.9);
+  --input-bg: #0f172a;
+
+  /* --- TEXTO & BORDAS (DARK) --- */
+  --text-main: #f1f5f9; /* Slate 100 */
+  --text-secondary: #94a3b8; /* Slate 400 */
+  --border-color: #334155; /* Slate 700 */
+
+  /* --- TABELA (DARK) --- */
+  --table-header-bg: #1e293b;
+  --table-row-hover: #334155; /* Slate 700 */
+  --table-row-striped: #253045; /* Slate 750 (Custom Dark Stripe) */
+
+  /* --- BADGES (DARK) --- */
+  --badge-text: #e2e8f0;
+  --badge-bg-default: #334155;
+
+  /* --- KPI ICONS (DARK - Transparente) --- */
+  --icon-bg-blue: rgba(59, 130, 246, 0.15);
+  --icon-bg-indigo: rgba(99, 102, 241, 0.15);
+  --icon-bg-purple: rgba(168, 85, 247, 0.15);
+  --icon-bg-teal: rgba(20, 184, 166, 0.15);
+  --icon-bg-green: rgba(34, 197, 94, 0.15);
+  --icon-bg-red: rgba(239, 68, 68, 0.15);
+}
+
+/* =========================================
+   RESET & BASE
+   ========================================= */
+
+html, body {
+  height: 100%;
+  width: 100%;
+  margin: 0;
+  padding: 0;
+  font-family: var(--font-family), 'Inter', sans-serif;
+  background-color: var(--bg-color);
+  color: var(--text-main);
+  overflow-x: hidden;
+  transition: background-color 0.3s ease, color 0.3s ease;
+}
+
+/* =========================================
+   OVERRIDES GLOBAIS DO PRIMENG
+   ========================================= */
+
+/* Inputs, Selects, Textareas */
+.p-inputtext,
+.p-inputnumber-input,
+.p-select,
+.p-textarea {
+  width: 100%;
+  border-radius: 8px;
+  padding: 0.75rem 1rem;
+  /* Transição suave para dark mode */
+  transition: background-color 0.3s, border-color 0.3s, color 0.3s;
+}
+
+/* Dialogs */
+.p-dialog .p-dialog-header {
+  border-top-left-radius: 16px;
+  border-top-right-radius: 16px;
+}
+.p-dialog .p-dialog-footer {
+  border-bottom-left-radius: 16px;
+  border-bottom-right-radius: 16px;
+  padding: 1.5rem;
+}
+
+/* --- APLICAÇÃO DO DARK MODE NOS COMPONENTES --- */
+body.dark-theme {
+
+  /* Inputs & Forms */
+  .p-inputtext,
+  .p-inputnumber-input,
+  .p-select,
+  .p-textarea {
+    background-color: var(--input-bg);
+    border-color: var(--border-color);
+    color: var(--text-main);
+  }
+
+  .p-inputtext:enabled:focus {
+    border-color: var(--primary-color);
+  }
+
+  /* Select / Dropdown Label & Panel */
+  .p-select .p-select-label {
+    color: var(--text-main);
+  }
+
+  .p-select-panel {
+    background-color: var(--card-bg);
+    border-color: var(--border-color);
+  }
+
+  .p-select-panel .p-select-item {
+    color: var(--text-main);
+  }
+
+  .p-select-panel .p-select-item:hover {
+    background-color: var(--table-row-hover);
+  }
+
+  .p-select-panel .p-select-item.p-highlight {
+    background-color: var(--primary-color);
+    color: #ffffff;
+  }
+
+  /* Dialogs */
+  .p-dialog .p-dialog-header,
+  .p-dialog .p-dialog-content,
+  .p-dialog .p-dialog-footer {
+    background-color: var(--card-bg);
+    color: var(--text-main);
+    border-color: var(--border-color);
+  }
+
+  .p-dialog .p-dialog-header .p-dialog-title {
+    color: var(--text-main);
+  }
+
+  /* Datepicker */
+  .p-datepicker {
+    background-color: var(--card-bg);
+    border-color: var(--border-color);
+  }
+
+  .p-datepicker .p-datepicker-header {
+    background-color: var(--card-bg);
+    color: var(--text-main);
+    border-bottom-color: var(--border-color);
+  }
+
+  .p-datepicker table td > span {
+    color: var(--text-main);
+  }
+
+  .p-datepicker table td > span.p-highlight {
+    background-color: var(--primary-color);
+    color: #ffffff;
+  }
+
+  /* Buttons Secondary/Text */
+  .p-button.p-button-secondary.p-button-text {
+    color: var(--text-secondary);
+  }
+  .p-button.p-button-secondary.p-button-text:hover {
+    color: var(--text-main);
+    background-color: var(--table-row-hover);
+  }
+}
+/* ================================
+   RESET GLOBAL DEFINITIVO
+   ================================ */
+
+html,
+body,
+app-root {
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  padding: 0;
+  background-color: var(--bg-color);
+}
+
+/* Angular root sempre ocupa a tela */
+app-root {
+  display: block;
+  min-height: 100vh;
+}
+
+/* Evita scroll branco lateral */
+body {
+  overflow-x: hidden;
+}
+app-root {
+  display: block;
+  min-height: 100vh;
+  background-color: var(--bg-color);
+}

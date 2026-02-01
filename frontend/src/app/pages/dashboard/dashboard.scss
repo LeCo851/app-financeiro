@@ -1,69 +1,11 @@
-/* --- VARIÁVEIS GLOBAIS (Light Mode Default) --- */
+/* --- CONFIGURAÇÃO DO COMPONENTE (Essencial para o layout) --- */
 :host {
-  --primary-color: #6366f1; /* Indigo 500 */
-  --primary-hover: #4f46e5;
-
-  --bg-color: #f8fafc; /* Slate 50 */
-  --card-bg: #ffffff;
-  --header-bg: rgba(255, 255, 255, 0.9);
-
-  --text-main: #1e293b; /* Slate 800 */
-  --text-secondary: #64748b; /* Slate 500 */
-  --border-color: #e2e8f0; /* Slate 200 */
-
-  --table-header-bg: #f8fafc;
-  --table-row-hover: #f1f5f9; /* Slate 100 */
-  --table-row-striped: #f8fafc; /* Slate 50 */
-  --input-bg: #ffffff;
-
-  --success-color: #10b981;
-  --danger-color: #ef4444;
-  --warning-color: #f59e0b;
-  --info-color: #3b82f6;
-
-  --badge-text: #475569; /* Slate 600 */
-  --badge-bg-default: #f1f5f9; /* Slate 100 */
-
-  /* KPI Icons Backgrounds (Light) */
-  --icon-bg-blue: #eff6ff;
-  --icon-bg-indigo: #eef2ff;
-  --icon-bg-purple: #faf5ff;
-  --icon-bg-teal: #f0fdfa;
-  --icon-bg-green: #f0fdf4;
-  --icon-bg-red: #fef2f2;
-
   display: block;
-  background-color: var(--bg-color);
   min-height: 100vh;
+  background-color: var(--bg-color);
+  color: var(--text-main);
   font-family: 'Inter', sans-serif;
   transition: background-color 0.3s ease, color 0.3s ease;
-}
-
-/* --- DARK MODE OVERRIDES --- */
-:host-context(.dark-theme) {
-  --bg-color: #0f172a; /* Slate 900 */
-  --card-bg: #1e293b; /* Slate 800 */
-  --header-bg: rgba(30, 41, 59, 0.9);
-
-  --text-main: #f1f5f9; /* Slate 100 */
-  --text-secondary: #94a3b8; /* Slate 400 */
-  --border-color: #334155; /* Slate 700 */
-
-  --table-header-bg: #1e293b; /* Slate 800 */
-  --table-row-hover: #334155; /* Slate 700 */
-  --table-row-striped: #253045; /* Slate 750 (Custom dark stripe - Distinct from card-bg) */
-  --input-bg: #0f172a;
-
-  --badge-text: #e2e8f0; /* Slate 200 (Claro para contraste no dark mode) */
-  --badge-bg-default: #334155; /* Slate 700 */
-
-  /* KPI Icons Backgrounds (Dark - More subtle/transparent) */
-  --icon-bg-blue: rgba(59, 130, 246, 0.15);
-  --icon-bg-indigo: rgba(99, 102, 241, 0.15);
-  --icon-bg-purple: rgba(168, 85, 247, 0.15);
-  --icon-bg-teal: rgba(20, 184, 166, 0.15);
-  --icon-bg-green: rgba(34, 197, 94, 0.15);
-  --icon-bg-red: rgba(239, 68, 68, 0.15);
 }
 
 /* --- LAYOUT --- */
@@ -216,7 +158,7 @@
 .kpi-content {
   display: flex;
   flex-direction: column;
-  min-width: 0; /* Permite truncamento em flex child */
+  min-width: 0;
 }
 
 .kpi-label {
@@ -226,7 +168,7 @@
 }
 
 .kpi-value {
-  font-size: 1.35rem; /* Reduzido para acomodar números maiores */
+  font-size: 1.35rem;
   font-weight: 700;
   color: var(--text-main);
   line-height: 1.2;
@@ -369,7 +311,7 @@
     }
   }
 
-  /* Zebra Striping Customizado - Sobrescrevendo o padrão do PrimeNG */
+  /* Zebra Striping Customizado */
   &.p-datatable-striped .p-datatable-tbody > tr:nth-child(even) {
     background-color: var(--table-row-striped);
     color: var(--text-main);
@@ -421,8 +363,8 @@
   border-radius: 999px;
   font-size: 0.75rem;
   font-weight: 600;
-  color: var(--badge-text); /* Variável para cor do texto */
-  background-color: var(--badge-bg-default); /* Variável para cor de fundo padrão */
+  color: var(--badge-text);
+  background-color: var(--badge-bg-default);
   display: inline-block;
 }
 
@@ -480,92 +422,45 @@
   }
 }
 
-/* --- PRIMENG OVERRIDES FOR DARK MODE --- */
+/* --- DARK MODE OVERRIDES (Específicos da Página) --- */
 :host-context(.dark-theme) {
-  ::ng-deep {
-    .p-inputtext, .p-inputnumber-input, .p-select {
-      background-color: var(--input-bg);
-      border-color: var(--border-color);
-      color: var(--text-main);
-    }
 
-    /* Correção para o texto do Select no modo escuro */
-    .p-select .p-select-label {
-      color: var(--text-main);
-    }
+  /* FORÇA BRUTA PARA TABELA NO MODO ESCURO */
+  ::ng-deep .p-datatable-striped .p-datatable-tbody > tr:nth-child(odd) {
+    background-color: var(--card-bg) !important;
+    color: var(--text-main) !important;
 
-    .p-select-panel {
-      background-color: var(--card-bg);
-      border-color: var(--border-color);
-
-      .p-select-item {
-        color: var(--text-main);
-        &:hover {
-          background-color: var(--table-row-hover);
-        }
-        &.p-highlight {
-          background-color: var(--primary-color);
-          color: white;
-        }
-      }
-    }
-
-    .p-dialog {
-      .p-dialog-header, .p-dialog-content, .p-dialog-footer {
-        background-color: var(--card-bg);
-        color: var(--text-main);
-        border-color: var(--border-color);
-      }
-    }
-
-    .p-datepicker {
-      background-color: var(--card-bg);
-      border-color: var(--border-color);
-
-      .p-datepicker-header {
-        background-color: var(--card-bg);
-        color: var(--text-main);
-        border-bottom-color: var(--border-color);
-      }
-
-      table td {
-        > span {
-          color: var(--text-main);
-          &.p-highlight {
-            background-color: var(--primary-color);
-          }
-        }
-      }
-    }
-
-    /* FORÇA BRUTA PARA TABELA NO MODO ESCURO */
-    .p-datatable-striped .p-datatable-tbody > tr:nth-child(odd) {
-      background-color: var(--card-bg) !important;
+    > td {
       color: var(--text-main) !important;
-
-      > td {
-        color: var(--text-main) !important;
-      }
-    }
-
-    .p-datatable-striped .p-datatable-tbody > tr:nth-child(even) {
-      background-color: var(--table-row-striped) !important;
-      color: var(--text-main) !important;
-
-      > td {
-        color: var(--text-main) !important;
-      }
-    }
-
-    /* Mantém o hover funcionando */
-    .p-datatable-tbody > tr:hover {
-      background-color: var(--table-row-hover) !important;
-    }
-
-    /* Correção de contraste para badges de categoria no modo escuro */
-    .category-badge {
-      color: var(--badge-text) !important;
-      background-color: var(--badge-bg-default) !important;
     }
   }
+
+  ::ng-deep .p-datatable-striped .p-datatable-tbody > tr:nth-child(even) {
+    background-color: var(--table-row-striped) !important;
+    color: var(--text-main) !important;
+
+    > td {
+      color: var(--text-main) !important;
+    }
+  }
+
+  ::ng-deep .p-datatable-tbody > tr:hover {
+    background-color: var(--table-row-hover) !important;
+  }
+
+  /* Correção de contraste para badges de categoria no modo escuro */
+  .category-badge {
+    color: var(--badge-text) !important;
+    background-color: var(--badge-bg-default) !important;
+  }
+}
+:host {
+  background-color: var(--bg-color);
+  min-height: 100vh;
+  display: block;
+}
+
+.layout-wrapper {
+  background-color: var(--bg-color);
+  min-height: 100vh;
 }
