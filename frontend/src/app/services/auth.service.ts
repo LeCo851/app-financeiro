@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
 import {createClient,SupabaseClient,User, Session} from '@supabase/supabase-js';
-import {environment} from '../../environment/environment';
+import {environment} from '../../environments/environment';
 import {BehaviorSubject,from, Observable} from 'rxjs';
 import {map} from 'rxjs/operators';
 import {Router} from '@angular/router';

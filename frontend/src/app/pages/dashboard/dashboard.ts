@@ -1,4 +1,4 @@
-import { Component, OnInit, ViewChild, Renderer2, Inject, PLATFORM_ID } from '@angular/core';
+import {Component, OnInit, ViewChild, Renderer2, Inject, PLATFORM_ID, inject} from '@angular/core';
 import { CommonModule, isPlatformBrowser } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 
@@ -29,6 +29,8 @@ import { InvestmentService } from '../../services/investment.service';
 import { Investment } from '../../models/investment.model';
 import { PluggyConnect } from 'pluggy-connect-sdk';
 import { PlotlyModule } from 'angular-plotly.js';
+import {DialogService} from 'primeng/dynamicdialog';
+import {EditTransactionDialog} from '../../components/edit-transaction-dialog/edit-transaction-dialog';
 
 // Interface estendida
 interface DashboardTransaction extends Transaction {
@@ -59,10 +61,12 @@ interface DashboardTransaction extends Transaction {
   ],
   templateUrl: './dashboard.html',
   styleUrl: './dashboard.scss',
+  providers:[DialogService]
 })
 export class Dashboard implements OnInit {
   @ViewChild('dt') dt!: Table;
 
+  private dialogService = inject(DialogService);
   // --- DADOS ---
   transactions: DashboardTransaction[] = [];
   investments: Investment[] = [];
@@ -772,6 +776,25 @@ export class Dashboard implements OnInit {
         },
         error: (err) => console.error("Erro ao excluior: ", err)
       });
+    }
+  }
+  editTransaction(transaction: any) {
+    if (this.dialogService) {
+      const ref = this.dialogService.open(EditTransactionDialog, {
+        header: 'Editar Transação',
+        width: '450px',
+        contentStyle: { overflow: 'visible' },
+        baseZIndex: 10000,
+        data: transaction
+      });
+
+      if (ref) {
+        ref.onClose.subscribe((updatedTransaction) => {
+          if (updatedTransaction) {
+            this.loadData();
+          }
+        });
+      }
     }
   }
 

@@ -1,15 +1,21 @@
 package br.com.leandrocoelho.backend.service;
 
+import br.com.leandrocoelho.backend.dto.request.TransactionUpdateDto;
 import br.com.leandrocoelho.backend.dto.response.DashboardSummaryDto;
+import br.com.leandrocoelho.backend.model.Category;
 import br.com.leandrocoelho.backend.model.Transaction;
+import br.com.leandrocoelho.backend.model.User;
 import br.com.leandrocoelho.backend.model.enums.TransactionType;
 import br.com.leandrocoelho.backend.repository.AccountRepository;
+import br.com.leandrocoelho.backend.repository.CategoryRepository;
 import br.com.leandrocoelho.backend.repository.TransactionRepository;
 import br.com.leandrocoelho.backend.security.UserContext;
 import lombok.RequiredArgsConstructor;
 import lombok.extern.slf4j.Slf4j;
+import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
+import org.springframework.web.server.ResponseStatusException;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -26,6 +32,7 @@ public class CoreTransactionService {
 
     private final TransactionRepository repository;
     private final AccountRepository accountRepository;
+    private final CategoryRepository categoryRepository;
 
     // ==================================================================================
     // MÉTODOS DE LEITURA (READ)
@@ -183,9 +190,65 @@ public class CoreTransactionService {
         repository.delete(transaction);
     }
 
+    @Transactional
+    public Transaction updateTransaction(UUID transactionId, TransactionUpdateDto dto){
+        UUID userId = UserContext.getCurrentUserId();
+
+        Transaction transaction = repository.findById(transactionId)
+                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Transação não encontrada"));
+        if(!transaction.getUser().getId().equals(userId)){
+           throw  new ResponseStatusException(HttpStatus.FORBIDDEN, "Acesso negado a transação");
+        }
+
+        if(dto.type() != null && dto.type() != transaction.getType()){
+            transaction.setType(dto.type());
+            adjustAmountSignByType(transaction);
+        }
+
+        if(dto.categoryId() != null){
+            if(transaction.getCategory() == null || !transaction.getCategory().getId().equals(dto.categoryId())){
+                Category newCategory = categoryRepository.findById(dto.categoryId())
+                        .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "Categoria não encontrada"));
+
+                if(!newCategory.getUser().getId().equals(userId)){
+                    throw new ResponseStatusException(HttpStatus.FORBIDDEN, "Essa categoria não pertence a você");
+                }
+                transaction.setCategory(newCategory);
+            }
+        }
+        if(dto.description() != null && !dto.description().isBlank()){
+            transaction.setDescription(dto.description());
+        }
+
+        transaction.setManualEdit(true);
+        return repository.save(transaction);
+
+    }
+
     // ==================================================================================
     // MÉTODOS AUXILIARES (PRIVADOS)
     // ==================================================================================
+
+    private void adjustAmountSignByType(Transaction tx){
+        BigDecimal amount = tx.getAmount();
+        if(amount == null) return;
+
+        switch (tx.getType()){
+            case INCOME:
+                if(amount.compareTo(BigDecimal.ZERO) < 0){
+                    tx.setAmount(amount.abs());
+                }
+                break;
+            case EXPENSE:
+            case INVESTMENT:
+                if (amount.compareTo(BigDecimal.ZERO) > 0){
+                    tx.setAmount(amount.abs().negate());
+                }
+                break;
+            case TRANSFER:
+                break;
+        }
+    }
 
     private void validateUserOwnership(Transaction tx, UUID batchUserId) {
         if (tx.getUser() == null || !tx.getUser().getId().equals(batchUserId)) {
@@ -194,21 +257,29 @@ public class CoreTransactionService {
     }
 
     private void updateExistingTransactionData(Transaction target, Transaction source) {
-        // Atualiza campos core
-        target.setDescription(source.getDescription());
-        target.setAmount(source.getAmount());
+        // 1. CAMPOS TÉCNICOS/BANCÁRIOS (Sempre atualizamos)
+        // O banco sempre tem razão sobre a data real da compensação e o status (Pendente -> Postado)
         target.setDate(source.getDate());
         target.setStatus(source.getStatus());
-
-        // Só atualiza categoria se a nova não for nula (preserva categorização manual antiga se a nova vier vazia)
-        if (source.getCategory() != null) {
-            target.setCategory(source.getCategory());
-        }
-
-        // Atualiza campos ricos / metadados
-        target.setMerchantName(source.getMerchantName());
         target.setPaymentMethod(source.getPaymentMethod());
-        target.setType(source.getType()); // Atualiza tipo caso a regra de negócio tenha mudado (Ex: Expense -> Investment)
+        target.setMerchantName(source.getMerchantName());
+
+        // 2. VERIFICAÇÃO DE PROTEÇÃO (Manual Edit)
+        if (!target.isManualEdit()) {
+            target.setDescription(source.getDescription());
+            target.setCategory(source.getCategory());
+            target.setType(source.getType());
+            target.setAmount(source.getAmount()); // Aceita o valor e sinal da API
+        } else {
+
+            BigDecimal newRawAmount = source.getAmount() != null ? source.getAmount().abs() : BigDecimal.ZERO;
+
+            if (target.getType() == TransactionType.EXPENSE || target.getType() == TransactionType.INVESTMENT) {
+                target.setAmount(newRawAmount.negate());
+            } else {
+                target.setAmount(newRawAmount);
+            }
+        }
     }
 
     private void processManualTransaction(Transaction tx, UUID userId, Set<String> processedHashes) {

@@ -17,7 +17,7 @@ public class AiCategorizationService {
     private static final String CATEGORIES_LIST = String.join(", ",
             "Alimentação", "Transporte", "Moradia", "Lazer", "Saúde",
             "Educação", "Compras", "Serviços", "Investimentos",
-            "Transferência", "Receita", "Impostos", "Outros");
+            "Transferência", "Receita", "Impostos","Pet", "Outros");
 
     public AiCategorizationService(ChatClient.Builder chatClientBuilder) {
         this.chatClient = chatClientBuilder.build();

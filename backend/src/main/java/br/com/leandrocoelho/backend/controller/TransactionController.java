@@ -2,6 +2,7 @@ package br.com.leandrocoelho.backend.controller;
 
 
 import br.com.leandrocoelho.backend.dto.request.TransactionRequestDto;
+import br.com.leandrocoelho.backend.dto.request.TransactionUpdateDto;
 import br.com.leandrocoelho.backend.dto.response.DashboardSummaryDto;
 import br.com.leandrocoelho.backend.dto.response.TransactionResponseDto;
 import br.com.leandrocoelho.backend.model.Category;
@@ -148,5 +149,14 @@ public class TransactionController {
         userRepository.save(user);
 
         return ResponseEntity.ok().build();
+    }
+
+    @PatchMapping("/{id}")
+    public ResponseEntity<Transaction> updateTransaction(
+            @PathVariable UUID id,
+            @RequestBody TransactionUpdateDto dto
+            ){
+        Transaction updatedTransatcion = coreTransactionService.updateTransaction(id, dto);
+        return ResponseEntity.ok(updatedTransatcion);
     }
 }

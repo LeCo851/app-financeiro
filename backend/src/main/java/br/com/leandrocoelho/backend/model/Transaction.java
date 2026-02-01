@@ -2,6 +2,7 @@ package br.com.leandrocoelho.backend.model;
 
 import br.com.leandrocoelho.backend.model.enums.TransactionSource;
 import br.com.leandrocoelho.backend.model.enums.TransactionType;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
@@ -26,16 +27,17 @@ public class Transaction extends BaseEntity {
     // --- RELACIONAMENTOS (Alterado de UUID raw para Entidades) ---
 
     // Usamos o objeto User. Isso permite fazer transaction.getUser().getGrossSalary() na IA.
+    @JsonIgnore
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id", nullable = false)
     private User user;
 
     // NOVO: Vínculo com a conta bancária (Essencial para saber se é Crédito ou Débito real)
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "account_id")
     private Account account;
 
-    @ManyToOne(fetch = FetchType.LAZY)
+    @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "category_id")
     private Category category;
 
@@ -126,6 +128,8 @@ public class Transaction extends BaseEntity {
     @Column(name = "raw_payload", columnDefinition = "jsonb")
     private String rawPayLoad;
 
+    @Column(name = "manual_edit",nullable = false)
+    private boolean manualEdit = false;
 
     // --- MÉTODOS UTILITÁRIOS ---
 

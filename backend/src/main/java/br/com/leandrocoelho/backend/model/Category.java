@@ -1,6 +1,7 @@
 package br.com.leandrocoelho.backend.model;
 
 import br.com.leandrocoelho.backend.model.enums.TransactionType;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
@@ -20,6 +21,7 @@ public class Category extends BaseEntity {
 
     // ALTERAÇÃO: Trocamos o UUID solto pelo Objeto User
     // Isso garante a integridade referencial (Foreign Key)
+    @JsonIgnore
     @ManyToOne(fetch = FetchType.LAZY)
     @JoinColumn(name = "user_id", nullable = false)
     private User user;

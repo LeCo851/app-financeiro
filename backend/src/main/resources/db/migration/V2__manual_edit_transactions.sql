@@ -1,0 +1,2 @@
+ALTER TABLE transactions
+    ADD COLUMN manual_edit BOOLEAN NOT NULL DEFAULT FALSE;

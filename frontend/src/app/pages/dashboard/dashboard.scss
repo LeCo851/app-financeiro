@@ -21,6 +21,9 @@
   --warning-color: #f59e0b;
   --info-color: #3b82f6;
 
+  --badge-text: #475569; /* Slate 600 */
+  --badge-bg-default: #f1f5f9; /* Slate 100 */
+
   /* KPI Icons Backgrounds (Light) */
   --icon-bg-blue: #eff6ff;
   --icon-bg-indigo: #eef2ff;
@@ -50,6 +53,9 @@
   --table-row-hover: #334155; /* Slate 700 */
   --table-row-striped: #253045; /* Slate 750 (Custom dark stripe - Distinct from card-bg) */
   --input-bg: #0f172a;
+
+  --badge-text: #e2e8f0; /* Slate 200 (Claro para contraste no dark mode) */
+  --badge-bg-default: #334155; /* Slate 700 */
 
   /* KPI Icons Backgrounds (Dark - More subtle/transparent) */
   --icon-bg-blue: rgba(59, 130, 246, 0.15);
@@ -210,6 +216,7 @@
 .kpi-content {
   display: flex;
   flex-direction: column;
+  min-width: 0; /* Permite truncamento em flex child */
 }
 
 .kpi-label {
@@ -219,10 +226,13 @@
 }
 
 .kpi-value {
-  font-size: 1.5rem;
+  font-size: 1.35rem; /* Reduzido para acomodar números maiores */
   font-weight: 700;
   color: var(--text-main);
   line-height: 1.2;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 /* --- GRÁFICOS --- */
@@ -411,7 +421,8 @@
   border-radius: 999px;
   font-size: 0.75rem;
   font-weight: 600;
-  color: #475569;
+  color: var(--badge-text); /* Variável para cor do texto */
+  background-color: var(--badge-bg-default); /* Variável para cor de fundo padrão */
   display: inline-block;
 }
 
@@ -549,6 +560,12 @@
     /* Mantém o hover funcionando */
     .p-datatable-tbody > tr:hover {
       background-color: var(--table-row-hover) !important;
+    }
+
+    /* Correção de contraste para badges de categoria no modo escuro */
+    .category-badge {
+      color: var(--badge-text) !important;
+      background-color: var(--badge-bg-default) !important;
     }
   }
 }

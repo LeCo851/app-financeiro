@@ -1,7 +1,8 @@
 import { Injectable } from '@angular/core';
-import {environment} from '../../environment/environment';
+import {environment} from '../../environments/environment';
 import {HttpClient, HttpParams} from '@angular/common/http';
 import {Observable} from 'rxjs';
+import {TransactionUpdateDto} from '../models/Transaction.model';
 
 
 export interface Transaction {
@@ -60,5 +61,8 @@ export class TransactionService {
 
   savePluggyItemId(itemId: string): Observable<void> {
     return this.http.post<void>(`${this.apiUrl}/link-pluggy`, { itemId });
+  }
+  updateTransaction(id: string, dto: TransactionUpdateDto): Observable<Transaction>{
+    return this.http.patch<Transaction>(`${this.apiUrl}/${id}`,dto)
   }
 }
