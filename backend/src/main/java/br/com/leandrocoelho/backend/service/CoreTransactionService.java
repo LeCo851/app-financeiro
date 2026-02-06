@@ -105,6 +105,7 @@ public class CoreTransactionService {
         // Saldo do Mês (Fluxo de Caixa: O quanto sobrou ou faltou neste mês específico)
         BigDecimal monthBalance = repository.sumPeriodBalance(userId, startZoned, endZoned);
 
+        BigDecimal fixedExpense = repository.sumFixedExpenses(userId, startZoned, endZoned);
         // 3. Monta o DTO
         return DashboardSummaryDto.builder()
                 .currentBalance(currentBalance)      // Card Saldo Corrente
@@ -112,6 +113,7 @@ public class CoreTransactionService {
                 .totalIncome(monthIncome)            // Card Receitas
                 .totalExpense(monthExpense)          // Card Despesas
                 .averageIncome(repository.calculateAverageMonthlyIncome(userId)) // Card Salário Médio
+                .totalFixedExpense(fixedExpense) // gastos fixos
                 .build();
     }
 

@@ -19,5 +19,6 @@ public class DashboardSummaryDto {
     private BigDecimal currentBalance; // Saldo acumulado até hoje (Saldo Corrente)
     private BigDecimal averageIncome;
     private BigDecimal monthBalance;
+    private BigDecimal totalFixedExpense;
 
 }

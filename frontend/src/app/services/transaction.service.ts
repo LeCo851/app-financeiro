@@ -27,6 +27,8 @@ export interface DashboardSummary {
   totalExpense?: number;
   balance?: number;
   currentBalance?: number;
+  averageIncome?: number;
+  totalFixedExpense?: number;
 }
 
 @Injectable({
@@ -45,8 +47,11 @@ export class TransactionService {
     return this.http.get<Transaction[]>(this.apiUrl, { params });
   }
 
-  getSummary(): Observable<DashboardSummary> {
-    return this.http.get<DashboardSummary>(`${this.apiUrl}/summary`);
+  getSummary(year?: number, month?: number): Observable<DashboardSummary> {
+    let params = new HttpParams();
+    if (year) params = params.set('year', year);
+    if (month) params = params.set('month', month);
+    return this.http.get<DashboardSummary>(`${this.apiUrl}/summary`, { params });
   }
 
   create(transaction: Transaction): Observable<Transaction>{

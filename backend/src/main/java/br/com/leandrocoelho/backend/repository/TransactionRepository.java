@@ -118,4 +118,18 @@ public interface TransactionRepository extends JpaRepository<Transaction, UUID> 
             @Param("description") String description,
             @Param("cutoffDate") LocalDate cutoffDate
     );
+
+    @Query("""
+        SELECT COALESCE(SUM (t.amount),0)
+        FROM Transaction t
+        WHERE t.user.id = :userId
+            AND t.date >= :start AND t.date <= :end
+            AND t.type = 'EXPENSE'
+            AND t.isFixedExpense = TRUE
+""")
+    BigDecimal sumFixedExpenses(
+            @Param("userId") UUID userId,
+            @Param("start") ZonedDateTime start,
+            @Param("end") ZonedDateTime end
+    );
 }

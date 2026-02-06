@@ -84,6 +84,7 @@ export class Dashboard implements OnInit {
   totalIncome = 0;
   totalExpense = 0;
   totalInvested = 0;
+  totalFixedExpense = 0;
 
   // --- GRÁFICOS PLOTLY ---
   public donutGraph: any = { data: [], layout: {}, config: {} };
@@ -254,10 +255,11 @@ export class Dashboard implements OnInit {
     });
 
     // 2. Carrega Saldo Corrente
-    this.transactionService.getSummary().subscribe({
+    this.transactionService.getSummary(this.selectedYear, this.selectedMonth).subscribe({
       next: (summary: any) => {
         if (summary.currentBalance !== undefined) this.currentBalance = summary.currentBalance;
         if (summary.averageIncome !== undefined) this.averageIncome = summary.averageIncome;
+        if (summary.totalFixedExpense !== undefined) this.totalFixedExpense = summary.totalFixedExpense;
       },
       error: (err) => console.error("Erro saldo:", err)
     });
