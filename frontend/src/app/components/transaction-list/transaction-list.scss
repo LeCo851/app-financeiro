@@ -1,0 +1,73 @@
+/* --- BADGES --- */
+.category-badge {
+  padding: 0.25rem 0.75rem;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  font-weight: 600;
+  display: inline-block;
+}
+
+.type-badge {
+  padding: 0.25rem 0.5rem;
+  border-radius: 6px;
+  font-size: 0.75rem;
+  font-weight: 700;
+  text-transform: uppercase;
+
+  &.income { background: #dcfce7; color: #166534; }
+  &.expense { background: #fee2e2; color: #991b1b; }
+  &.investment { background: #f3e8ff; color: #6b21a8; }
+  &.transfer { background: #f1f5f9; color: #475569; }
+}
+
+/* --- BOTÕES DE AÇÃO --- */
+.action-btn {
+  background: transparent;
+  border: none;
+  cursor: pointer;
+  padding: 0.5rem;
+  border-radius: 50%;
+  transition: background 0.2s;
+  color: var(--text-secondary);
+
+  &:hover {
+    background: var(--table-row-hover);
+    color: var(--text-main);
+  }
+
+  &.delete:hover {
+    background: rgba(239, 68, 68, 0.1);
+    color: #ef4444;
+  }
+
+  &.fixed {
+    &.active {
+      color: var(--primary-color);
+      background: rgba(99, 102, 241, 0.1);
+    }
+    &:hover {
+      color: var(--primary-color);
+      background: rgba(99, 102, 241, 0.2);
+    }
+  }
+}
+
+/* --- EMPTY STATE --- */
+.empty-state {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 1rem;
+  padding: 2rem;
+
+  i {
+    font-size: 3rem;
+    color: var(--text-secondary);
+    opacity: 0.5;
+  }
+
+  p {
+    margin: 0;
+    color: var(--text-secondary);
+  }
+}

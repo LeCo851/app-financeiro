@@ -16,6 +16,7 @@ export interface Transaction {
   categoryColor?: string;
   categoryIcon?: string;
   merchantName?: string;
+  fixed?: boolean;
 
   totalInstallments?: number;
   currentInstallment?: number;
@@ -64,5 +65,8 @@ export class TransactionService {
   }
   updateTransaction(id: string, dto: TransactionUpdateDto): Observable<Transaction>{
     return this.http.patch<Transaction>(`${this.apiUrl}/${id}`,dto)
+  }
+  toggleFixedExpense(id: string): Observable<void> {
+    return this.http.patch<void>(`${this.apiUrl}/${id}/toggle-fixed`, {});
   }
 }

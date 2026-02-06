@@ -159,4 +159,10 @@ public class TransactionController {
         Transaction updatedTransatcion = coreTransactionService.updateTransaction(id, dto);
         return ResponseEntity.ok(updatedTransatcion);
     }
+
+    @PatchMapping("/{id}/toggle-fixed")
+    public ResponseEntity<Void> toggleFixedExpense(@PathVariable UUID id){
+        coreTransactionService.toggleFixedExpense(id);
+        return ResponseEntity.noContent().build();
+    }
 }

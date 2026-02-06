@@ -798,6 +798,17 @@ export class Dashboard implements OnInit {
     }
   }
 
+  toggleFixed(transaction: Transaction) {
+    if (!transaction.id) return;
+
+    this.transactionService.toggleFixedExpense(transaction.id).subscribe({
+      next: () => {
+        transaction.fixed = !transaction.fixed;
+      },
+      error: (err) => console.error('Erro ao alterar status fixo:', err)
+    });
+  }
+
   logout() {
     this.authService.signOut();
   }

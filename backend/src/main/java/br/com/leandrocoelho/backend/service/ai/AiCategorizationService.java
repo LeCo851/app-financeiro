@@ -56,37 +56,50 @@ public class AiCategorizationService {
         }
     }
 
-    public Map<String, String> categorizeBatch(Map<String, String> transactionsContext){
+    public Map<String, String> categorizeBatch(Map<String, String> transactionsContext) {
+        // Monta a lista visualmente para o prompt
         String itemsList = transactionsContext.entrySet().stream()
-                .map(e -> String.format("- ID: %s | Contexto: %s", e.getKey(),e.getValue()))
+                .map(e -> String.format("- ID: %s | Dados: %s", e.getKey(), e.getValue()))
                 .collect(Collectors.joining("\n"));
 
         String prompt = String.format("""
-                Atue como um classificador financeiro em lote.
-                Categorias permitidas: [%s].
-                
-                Analise a lista abaixo e retorne APENAS um JSON no formato:
-                {
-                  "ID_DA_LINHA": "CATEGORIA_ESCOLHIDA"
-                }
+            Atue como um classificador financeiro especialista.
+            Sua tarefa é analisar uma lista de transações e definir a categoria correta para CADA uma.
+            
+            Categorias permitidas: %s.
+            
+            Regras de Classificação:
+            1. Use a 'Loja' e a 'Desc' para identificar o gasto.
+            2. Se for 'Amazon', 'Mercado Livre', verifique se parece compra ou assinatura.
+            3. 'Uber' e '99' -> Transporte. 'Uber Eats' -> Alimentação.
+            4. Se não souber, use "Outros".
+            
+            Formato de Saída (JSON Puro):
+            Retorne APENAS um objeto JSON onde a chave é o ID e o valor é a Categoria.
+            NÃO escreva introduções como "Aqui está o JSON".
+            
+            Exemplo de Saída:
+            {
+              "id_123": "Alimentação",
+              "id_456": "Transporte"
+            }
 
-                Itens para classificar:
-                %s
-                
-                Regras:
-                1. Responda APENAS o JSON válido. Sem markdown, sem aspas extras.
-                2. Use "Outros" se não souber.
-                """, CATEGORIES_LIST, itemsList);
+            Itens para classificar:
+            %s
+            """, CATEGORIES_LIST, itemsList);
+
         try {
             String response = chatClient.prompt().user(prompt).call().content();
 
-            return parseJsonToMap(response);
+            // PASSO CRÍTICO: Limpeza da resposta antes de tentar converter
+            String cleanJson = cleanResponse(response);
 
-        }catch (Exception e){
-            log.error("Erro no batch do grok: " + e.getMessage());
+            return parseJsonToMap(cleanJson);
+
+        } catch (Exception e) {
+            log.error("Erro no batch do Groq: " + e.getMessage());
             return new HashMap<>();
         }
-
     }
 
     private Map<String, String> parseJsonToMap(String json){
@@ -111,17 +124,18 @@ public class AiCategorizationService {
     }
 
     private String cleanResponse(String response) {
-        if (response == null) return "Outros";
+        if (response == null) return "{}";
 
-        String cleaned = response.trim()
-                .replace(".", "")
-                .replace("\"", "")
-                .replace("Categoria: ", "");
+        String cleaned = response.replaceAll("```json", "").replaceAll("```", "");
 
-        // Validação final: Se a IA alucinou uma categoria nova, forçamos "Outros"
-        if (!CATEGORIES_LIST.contains(cleaned)) {
-            return "Outros";
+        // Remove qualquer texto antes do primeiro '{' ou depois do último '}'
+        int firstBrace = cleaned.indexOf("{");
+        int lastBrace = cleaned.lastIndexOf("}");
+
+        if (firstBrace != -1 && lastBrace != -1) {
+            cleaned = cleaned.substring(firstBrace, lastBrace + 1);
         }
-        return cleaned;
+
+        return cleaned.trim();
     }
 }

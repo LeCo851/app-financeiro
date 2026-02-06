@@ -6,13 +6,11 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.*;
 import lombok.experimental.SuperBuilder;
-import org.hibernate.annotations.CreationTimestamp;
 import org.hibernate.annotations.JdbcTypeCode;
-import org.hibernate.annotations.UpdateTimestamp;
 import org.hibernate.type.SqlTypes;
 
 import java.math.BigDecimal;
-import java.time.LocalDateTime;
+
 import java.time.ZonedDateTime;
 
 @Entity
@@ -130,6 +128,9 @@ public class Transaction extends BaseEntity {
 
     @Column(name = "manual_edit",nullable = false)
     private boolean manualEdit = false;
+
+    @Column(name = "is_fixed_expense" ,nullable = false)
+    private boolean isFixedExpense = false;
 
     // --- MÉTODOS UTILITÁRIOS ---
 

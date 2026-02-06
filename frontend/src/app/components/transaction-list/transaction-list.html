@@ -1,0 +1,98 @@
+<p-table
+  [value]="transactions"
+  [loading]="loading"
+  [paginator]="true"
+  [rows]="10"
+  [rowsPerPageOptions]="[10, 25, 50]"
+  styleClass="p-datatable-striped"
+  [tableStyle]="{ 'min-width': '60rem' }">
+
+  <ng-template pTemplate="header">
+    <tr>
+      <th pSortableColumn="description">Descrição <p-sortIcon field="description"></p-sortIcon></th>
+      <th pSortableColumn="merchantName">Estabelecimento <p-sortIcon field="merchantName"></p-sortIcon></th>
+      <th pSortableColumn="categoryName">Categoria <p-sortIcon field="categoryName"></p-sortIcon></th>
+      <th pSortableColumn="date">Data <p-sortIcon field="date"></p-sortIcon></th>
+      <th pSortableColumn="type">Tipo <p-sortIcon field="type"></p-sortIcon></th>
+      <th pSortableColumn="amount" class="text-right">Valor <p-sortIcon field="amount"></p-sortIcon></th>
+      <th class="text-center" style="width: 5rem"></th>
+    </tr>
+  </ng-template>
+
+  <ng-template pTemplate="body" let-t>
+    <tr>
+      <td>
+        <div class="font-semibold text-900">{{ t.description }}</div>
+        <div *ngIf="t.totalInstallments" class="text-xs text-500 mt-1">
+          Parcela {{ t.currentInstallment || 1 }}/{{ t.totalInstallments }}
+        </div>
+      </td>
+
+      <td>
+        <span *ngIf="t.merchantName" class="text-700">{{ t.merchantName }}</span>
+        <span *ngIf="!t.merchantName" class="text-400">-</span>
+      </td>
+
+      <td>
+        <span *ngIf="t.categoryName" class="category-badge" [style.background-color]="t.categoryColor || '#f1f5f9'">
+          {{ t.categoryName }}
+        </span>
+      </td>
+
+      <td class="text-600">
+        {{ t.date | date:'dd/MM/yyyy' }}
+      </td>
+
+      <td>
+        <span [class]="'type-badge ' + t.type.toLowerCase()">
+          {{ t.type }}
+        </span>
+      </td>
+
+      <td class="text-right font-medium">
+        <span [class]="t.type === 'INCOME' ? 'text-green-600' : t.type === 'INVESTMENT' ? 'text-purple-600' : 'text-red-600'">
+          {{ t.amount | currency:'BRL' }}
+        </span>
+      </td>
+
+      <td class="text-center flex align-items-center justify-content-center gap-2">
+        <button
+          class="action-btn edit"
+          (click)="editTransaction(t)"
+          pTooltip="Editar"
+          tooltipPosition="top">
+          <i class="pi pi-pencil"></i>
+        </button>
+
+        <button
+          class="action-btn delete"
+          (click)="deleteTransaction(t)"
+          pTooltip="Excluir"
+          tooltipPosition="left">
+          <i class="pi pi-trash"></i>
+        </button>
+
+        <button
+          class="action-btn fixed"
+          [ngClass]="{'active': t.fixed}"
+          (click)="toggleFixed(t)"
+          pTooltip="Fixar"
+          tooltipPosition="left">
+          <i class="pi pi-thumbtack"></i>
+        </button>
+      </td>
+    </tr>
+  </ng-template>
+
+  <ng-template pTemplate="emptymessage">
+    <tr>
+      <td colspan="7" class="text-center p-6 text-500">
+        <div class="empty-state">
+          <i class="pi pi-inbox"></i>
+          <p>Nenhuma transação encontrada.</p>
+        </div>
+      </td>
+    </tr>
+  </ng-template>
+
+</p-table>

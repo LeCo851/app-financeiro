@@ -7,6 +7,7 @@ import org.springframework.data.repository.query.Param;
 import org.springframework.stereotype.Repository;
 
 import java.math.BigDecimal;
+import java.time.LocalDate;
 import java.time.ZonedDateTime;
 import java.util.Collection;
 import java.util.List;
@@ -17,6 +18,7 @@ import java.util.UUID;
 @Repository
 public interface TransactionRepository extends JpaRepository<Transaction, UUID> {
 
+    Optional<Transaction> findById(UUID id);
     // --- LISTAGENS (Mantidas) ---
     @Query("SELECT t FROM Transaction t LEFT JOIN FETCH t.category LEFT JOIN FETCH t.scenario WHERE t.user.id = :userId ORDER BY t.date DESC")
     List<Transaction> findByUser_IdOrderByDateDesc(@Param("userId") UUID userId);
@@ -49,8 +51,25 @@ public interface TransactionRepository extends JpaRepository<Transaction, UUID> 
 
     // --- UTILITÁRIOS ---
     boolean existsByUser_IdAndTransactionHash(UUID userId, String transactionHash);
+
     Optional<Transaction> findByPluggyTransactionId(String pluggyTransactionId);
+
+    @Query("""
+        SELECT t FROM Transaction t 
+        WHERE t.account.id = :accountId 
+        AND t.amount = :amount 
+        AND CAST(t.date AS LocalDate) = :date
+        AND t.description = :description
+    """)
+    Optional<Transaction> findPotentialDuplicate(
+            @Param("accountId") UUID accountId,
+            @Param("amount") BigDecimal amount,
+            @Param("date") LocalDate date,
+            @Param("description") String description
+    );
     List<Transaction> findByPluggyTransactionIdIn(Collection<String> pluggyTransactionIds);
+
+
     @Query("SELECT t.transactionHash FROM Transaction t WHERE t.user.id = :userId AND t.transactionHash IN :hashes")
     Set<String> findHashesByUserAndHashesIn(@Param("userId") UUID userId, @Param("hashes") Collection<String> hashes);
 
@@ -82,4 +101,21 @@ public interface TransactionRepository extends JpaRepository<Transaction, UUID> 
     BigDecimal sumPeriodBalance(@Param("userId") UUID userId,
                                 @Param("start") ZonedDateTime start,
                                 @Param("end") ZonedDateTime end);
+
+
+    @Query(
+            """
+        SELECT t FROM Transaction t
+        WHERE t.user.id = :userId
+            AND t.isFixedExpense = TRUE 
+            AND LOWER(t.description) = LOWER(:description)
+            AND t.date >= :cutoffDate
+        ORDER BY t.date DESC 
+        LIMIT 1
+""")
+    Optional<Transaction> findRecurringPattern(
+            @Param("userId") UUID userId,
+            @Param("description") String description,
+            @Param("cutoffDate") LocalDate cutoffDate
+    );
 }

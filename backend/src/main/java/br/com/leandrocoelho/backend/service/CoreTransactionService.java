@@ -16,6 +16,7 @@ import org.springframework.http.HttpStatus;
 import org.springframework.stereotype.Service;
 import org.springframework.transaction.annotation.Transactional;
 import org.springframework.web.server.ResponseStatusException;
+import org.springframework.web.servlet.LocaleResolver;
 
 import java.math.BigDecimal;
 import java.time.LocalDate;
@@ -33,6 +34,7 @@ public class CoreTransactionService {
     private final TransactionRepository repository;
     private final AccountRepository accountRepository;
     private final CategoryRepository categoryRepository;
+    private final LocaleResolver localeResolver;
 
     // ==================================================================================
     // MÉTODOS DE LEITURA (READ)
@@ -127,56 +129,30 @@ public class CoreTransactionService {
      * O Método Coração: Recebe uma lista de transações (seja da Pluggy, CSV ou Manual)
      * e decide inteligentemente se cria novas ou atualiza as existentes.
      */
-    @Transactional
-    public List<Transaction> saveTransactionsBatch(List<Transaction> transactions) {
-        if (transactions == null || transactions.isEmpty()) {
-            return List.of();
-        }
+   @Transactional
+   public List<Transaction> saveTransactionsBatch(List<Transaction> transactions){
+       if (transactions == null || transactions.isEmpty()) return List.of();
 
-        UUID userId = transactions.get(0).getUser().getId();
-        List<Transaction> toSave = new ArrayList<>();
+       UUID userId= transactions.get(0).getUser().getId();
+       List<Transaction> toSave = new ArrayList<>();
+       Set<UUID> processedIds = new HashSet<>();
 
-        // 1. Identifica IDs externos (Pluggy) para fazer busca em lote (Batch Fetch)
-        List<String> externalIds = transactions.stream()
-                .map(Transaction::getPluggyTransactionId)
-                .filter(Objects::nonNull)
-                .toList();
+       Map<String, Transaction> existingPluggyMap = loadExistingTransactionsBatch(transactions);
+       LocalDate recurrenceLookBack = LocalDate.now().minusDays(60);
 
-        // 2. Carrega mapa de transações existentes para evitar N+1 selects
-        Map<String, Transaction> existingMap = new HashMap<>();
-        if (!externalIds.isEmpty()) {
-            existingMap = repository.findByPluggyTransactionIdIn(externalIds).stream()
-                    .collect(Collectors.toMap(Transaction::getPluggyTransactionId, Function.identity()));
-        }
+       for(Transaction tx: transactions){
+           validateUserOwnership(tx, userId);
+           normalizeTransactionAmount(tx);
 
-        // 3. Processamento
-        // Usamos Sets para garantir que não duplicamos hashs dentro do próprio lote de inserção
-        Set<String> processedManualHashes = new HashSet<>();
+           if (tx.getPluggyTransactionId() != null){
+               processPluggyTransaction(tx, existingPluggyMap, processedIds, recurrenceLookBack,toSave);
+           }else {
+               toSave.add(tx);
+           }
+       }
+       return repository.saveAll(toSave);
 
-        for (Transaction tx : transactions) {
-            validateUserOwnership(tx, userId);
-            normalizeTransactionAmount(tx);
-            // A) Lógica para Transações Externas (Pluggy) - UPSERT
-            if (tx.getPluggyTransactionId() != null) {
-                if (existingMap.containsKey(tx.getPluggyTransactionId())) {
-                    // ATUALIZAÇÃO (UPDATE)
-                    Transaction existing = existingMap.get(tx.getPluggyTransactionId());
-                    updateExistingTransactionData(existing, tx);
-                    toSave.add(existing);
-                } else {
-                    // NOVA (INSERT)
-                    toSave.add(tx);
-                }
-            }
-            // B) Lógica para Transações Manuais - INSERT COM VALIDAÇÃO DE DUPLICIDADE
-            else {
-                processManualTransaction(tx, userId, processedManualHashes);
-                toSave.add(tx);
-            }
-        }
-
-        return repository.saveAll(toSave);
-    }
+   }
 
     @Transactional
     public void deleteTransaction(UUID transactionId) {
@@ -228,6 +204,71 @@ public class CoreTransactionService {
     // ==================================================================================
     // MÉTODOS AUXILIARES (PRIVADOS)
     // ==================================================================================
+    private Map<String, Transaction> loadExistingTransactionsBatch(List<Transaction> transactions){
+        List<String> externalIds = transactions.stream()
+                .map(Transaction::getPluggyTransactionId)
+                .filter(Objects::nonNull)
+                .toList();
+        if(externalIds.isEmpty()) return new HashMap<>();
+
+        return repository.findByPluggyTransactionIdIn(externalIds).stream()
+                .collect(Collectors.toMap(Transaction::getPluggyTransactionId,Function.identity()));
+    }
+
+    private void processPluggyTransaction(
+            Transaction tx,
+            Map<String, Transaction> existingMap,
+            Set<UUID> processedIds,
+            LocalDate recurrenceLookBack,
+            List<Transaction> toSave){
+
+        if(existingMap.containsKey(tx.getPluggyTransactionId())){
+            Transaction existing = existingMap.get(tx.getPluggyTransactionId());
+            updateExistingTransactionData(existing, tx);
+            addToSaveList(existing, processedIds, toSave);
+        }
+    }
+
+    private void handlePotentialNewPluggyTransaction(
+            Transaction tx,
+            Map<String, Transaction> existingMap,
+            Set<UUID> processedIds,
+            LocalDate recurrenceLookBack,
+            List<Transaction> toSave
+    ){
+        Optional<Transaction> ghostDuplicate = repository.findPotentialDuplicate(
+                tx.getAccount().getId(),
+                tx.getAmount(),
+                tx.getDate().toLocalDate(),
+                tx.getDescription()
+        );
+        if (ghostDuplicate.isPresent()){
+            Transaction existing = ghostDuplicate.get();
+            log.info("Smart match: Atualizando ID de {} para {}", existing.getPluggyTransactionId(), tx.getPluggyTransactionId());
+
+            existing.setPluggyTransactionId(tx.getPluggyTransactionId());
+            updateExistingTransactionData(existing, tx);
+            addToSaveList(existing, processedIds, toSave);
+        }else {
+            applyRecurrencePattern(tx, recurrenceLookBack);
+            toSave.add(tx);
+        }
+    }
+
+    private void applyRecurrencePattern(Transaction tx, LocalDate lookBackDate){
+        repository.findRecurringPattern(tx.getUser().getId(), tx.getDescription(), lookBackDate)
+                .ifPresent(pattern -> {
+                    tx.setFixedExpense(true);
+                    log.info("Recorrência: '{}' marcada como fixa (baseada em registro de {})", tx.getDescription(), pattern.getDate());
+                });
+    }
+
+    private void addToSaveList(Transaction tx, Set<UUID> processedIds, List<Transaction> toSave){
+        if(processedIds.add(tx.getId())){
+            toSave.add(tx);
+        }
+    }
+
 
     private void adjustAmountSignByType(Transaction tx){
         BigDecimal amount = tx.getAmount();
@@ -310,6 +351,18 @@ public class CoreTransactionService {
 
             tx.setAmount(tx.getAmount().negate()); // Método .negate() é mais limpo que multiply(-1)
         }
+    }
+
+    public void toggleFixedExpense(UUID id){
+       Transaction tx = repository.findById(id)
+               .orElseThrow(() -> new RuntimeException("Transação não encontrada"));
+
+       boolean newValue = !tx.isFixedExpense();
+       tx.setFixedExpense(newValue);
+
+       repository.save(tx);
+        log.info("Transação '{}' (ID: {}) atualizada. Gasto Fixo: {}",
+                tx.getDescription(), id, newValue);
     }
 
 }

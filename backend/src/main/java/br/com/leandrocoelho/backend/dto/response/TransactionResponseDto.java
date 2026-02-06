@@ -29,6 +29,7 @@ public class TransactionResponseDto {
     private String merchantName;
     private Integer currentInstallment;
     private Integer totalInstallments;
+    private boolean fixed;
 
 
     // Construtor estático (Factory Method) para converter Entidade -> DTO
@@ -68,6 +69,7 @@ public class TransactionResponseDto {
         dto.setMerchantName(transaction.getMerchantName());
         dto.setCurrentInstallment(transaction.getInstallmentNumber());
         dto.setTotalInstallments(transaction.getTotalInstallments());
+        dto.setFixed(transaction.isFixedExpense());
 
         return dto;
     }

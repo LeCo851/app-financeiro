@@ -77,9 +77,11 @@ public class CoreCategoryService {
         Map<String, TransactionType> typeCache = new HashMap<>();
 
         for (PluggyTransactionDto dto : dtos){
-            String desc= dto.description();
-            String merch = dto.merchant() != null ? dto.merchant().businessName() : "";
-            String plugyCat = dto.merchant() != null ? dto.merchant().category() : null;
+            String desc= dto.description() != null ? dto.description() : "";
+            String merch = (dto.merchant() != null && dto.merchant().businessName() != null)
+                    ? dto.merchant().businessName()
+                    : "N/A";
+            String plugyCat = (dto.merchant() != null) ? dto.merchant().category() : null;
 
             TransactionType type = classifier.classify(dto.type(), desc);
             typeCache.put(dto.id(), type);
@@ -90,7 +92,8 @@ public class CoreCategoryService {
                 result.put(dto.id(), findOrCreateInDb(resolvedName, user, type));
 
             }else {
-                String context = desc + " " + merch;
+                String amountStr = dto.amount() != null ? dto.amount().toString() :"0.00";
+                String context = String.format("Desc: %s | Loja: %s | Valor: %s", desc, merch, amountStr);
                 needsAi.put(dto.id(),context);
             }
 
@@ -125,8 +128,13 @@ public class CoreCategoryService {
                         // Processa sucesso
                         for (Map.Entry<String, String> entry : aiResults.entrySet()) {
                             String pluggyId = entry.getKey();
-                            Category category = findOrCreateInDb(entry.getValue(), user, typeCache.getOrDefault(pluggyId, TransactionType.EXPENSE));
-                            result.put(pluggyId, category);
+                            if(typeCache.containsKey(pluggyId)){
+                                Category category = findOrCreateInDb(entry.getValue(), user, typeCache.get(pluggyId));
+                                result.put(pluggyId, category);
+                            }else{
+                                log.warn("Ignorando ID desconhecido retornado pela IA: {}", pluggyId);
+                            }
+
                         }
                         success = true; // Sai do while
 

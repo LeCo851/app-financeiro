@@ -400,6 +400,17 @@
     background: rgba(239, 68, 68, 0.1);
     color: #ef4444;
   }
+
+  &.fixed {
+    &.active {
+      color: var(--primary-color);
+      background: rgba(99, 102, 241, 0.1);
+    }
+    &:hover {
+      color: var(--primary-color);
+      background: rgba(99, 102, 241, 0.2);
+    }
+  }
 }
 
 /* --- EMPTY STATE --- */

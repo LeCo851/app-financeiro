@@ -10,7 +10,7 @@ spring:
   # 2. Banco de Dados (Supabase)
   datasource:
     driver-class-name: org.postgresql.Driver
-    url: ${DB_URL}
+    url: ${DB_URL}sslmode=require&prepareThreshold=0
     username: ${DB_USER}
     password: ${DB_PASS}
     hikari:

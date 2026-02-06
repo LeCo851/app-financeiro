@@ -7,7 +7,7 @@
         <div class="logo-icon">
           <i class="pi pi-wallet"></i>
         </div>
-        <span class="logo-text">Financeiro AI</span>
+        <span class="logo-text">Dashboard de Controle Financeiro</span>
       </div>
 
       <div class="actions-area">
@@ -305,6 +305,15 @@
                 pTooltip="Excluir"
                 tooltipPosition="left">
                 <i class="pi pi-trash"></i>
+              </button>
+
+              <button
+                class="action-btn fixed"
+                [ngClass]="{'active': t.fixed}"
+                (click)="toggleFixed(t)"
+                pTooltip="Fixar"
+                tooltipPosition="left">
+                <i class="pi pi-thumbtack"></i>
               </button>
             </td>
           </tr>
