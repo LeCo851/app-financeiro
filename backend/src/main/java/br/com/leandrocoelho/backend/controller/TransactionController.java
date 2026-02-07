@@ -12,6 +12,7 @@ import br.com.leandrocoelho.backend.model.User;
 import br.com.leandrocoelho.backend.model.enums.TransactionSource;
 import br.com.leandrocoelho.backend.repository.UserRepository;
 import br.com.leandrocoelho.backend.service.CoreTransactionService;
+import br.com.leandrocoelho.backend.service.DashboardService;
 import br.com.leandrocoelho.backend.service.InvestmentService;
 import br.com.leandrocoelho.backend.service.SyncService;
 import groovyjarjarantlr4.v4.codegen.model.Sync;
@@ -41,6 +42,7 @@ public class TransactionController {
     private final UserRepository userRepository;
     private final InvestmentService investmentService;
     private final SyncService sync;
+    private final DashboardService dashboardService;
     
     @PostMapping
     public ResponseEntity<TransactionResponseDto> create
@@ -110,7 +112,7 @@ public class TransactionController {
 
     {
         UUID userId = UUID.fromString(jwt.getClaimAsString("sub"));
-        DashboardSummaryDto summaryDto = coreTransactionService.getDashboardSummary(userId,year,month);
+        DashboardSummaryDto summaryDto = dashboardService.getDashboardSummary(userId,year,month);
 
         return ResponseEntity.ok(summaryDto);
     }

@@ -29,6 +29,8 @@ export interface DashboardSummary {
   currentBalance?: number;
   averageIncome?: number;
   totalFixedExpense?: number;
+  safeToExpend?: number;
+  commitmentPct?: number;
 }
 
 @Injectable({

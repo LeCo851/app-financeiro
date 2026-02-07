@@ -1,6 +1,7 @@
 import {Component, OnInit, ViewChild, Renderer2, Inject, PLATFORM_ID, inject} from '@angular/core';
 import { CommonModule, isPlatformBrowser } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { RouterLink } from '@angular/router';
 
 // PrimeNG Modules
 import { ToolbarModule } from 'primeng/toolbar';
@@ -57,7 +58,8 @@ interface DashboardTransaction extends Transaction {
     TooltipModule,
     PlotlyModule,
     IconFieldModule,
-    InputIconModule
+    InputIconModule,
+    RouterLink
   ],
   templateUrl: './dashboard.html',
   styleUrl: './dashboard.scss',
@@ -85,11 +87,14 @@ export class Dashboard implements OnInit {
   totalExpense = 0;
   totalInvested = 0;
   totalFixedExpense = 0;
+  safeToExpend = 0;
+  commitmentPct = 0;
 
   // --- GRÁFICOS PLOTLY ---
   public donutGraph: any = { data: [], layout: {}, config: {} };
   public barGraph: any = { data: [], layout: {}, config: {} };
   public treemapGraph: any = { data: [], layout: {}, config: {} };
+  public gaugeGraph: any = { data: [], layout: {}, config: {} };
 
   // --- CONTROLE UI ---
   displayDialog = false;
@@ -219,11 +224,13 @@ export class Dashboard implements OnInit {
     updateLayout(this.donutGraph.layout);
     updateLayout(this.barGraph.layout);
     updateLayout(this.treemapGraph.layout);
+    updateLayout(this.gaugeGraph.layout);
 
     // Força atualização dos gráficos
     this.donutGraph = { ...this.donutGraph };
     this.barGraph = { ...this.barGraph };
     this.treemapGraph = { ...this.treemapGraph };
+    this.gaugeGraph = { ...this.gaugeGraph };
   }
 
   initYears() {
@@ -260,6 +267,11 @@ export class Dashboard implements OnInit {
         if (summary.currentBalance !== undefined) this.currentBalance = summary.currentBalance;
         if (summary.averageIncome !== undefined) this.averageIncome = summary.averageIncome;
         if (summary.totalFixedExpense !== undefined) this.totalFixedExpense = summary.totalFixedExpense;
+        if (summary.safeToExpend !== undefined) this.safeToExpend = summary.safeToExpend;
+        if (summary.commitmentPct !== undefined) {
+          this.commitmentPct = summary.commitmentPct;
+          this.updateGaugeChart();
+        }
       },
       error: (err) => console.error("Erro saldo:", err)
     });
@@ -588,6 +600,13 @@ export class Dashboard implements OnInit {
       ...commonLayout,
       margin: { t: 0, b: 0, l: 0, r: 0 }
     };
+
+    // --- GAUGE ---
+    this.gaugeGraph.config = { ...commonConfig };
+    this.gaugeGraph.layout = {
+      ...commonLayout,
+      margin: { t: 30, b: 30, l: 30, r: 30 }
+    };
   }
 
   updateDonutChart() {
@@ -626,6 +645,35 @@ export class Dashboard implements OnInit {
         weight: 600
       }
     }];
+  }
+
+  updateGaugeChart() {
+    this.gaugeGraph.data = [
+      {
+        type: "indicator",
+        mode: "gauge+number",
+        value: this.commitmentPct,
+        title: { text: "Comprometimento da Renda", font: { size: 16 } },
+        number: { suffix: "%" },
+        gauge: {
+          axis: { range: [null, 100], tickwidth: 1, tickcolor: this.colors.text },
+          bar: { color: this.colors.primary },
+          bgcolor: "white",
+          borderwidth: 2,
+          bordercolor: this.colors.grid,
+          steps: [
+            { range: [0, 50], color: this.colors.success },
+            { range: [50, 80], color: this.colors.warning },
+            { range: [80, 100], color: this.colors.danger }
+          ],
+          threshold: {
+            line: { color: "red", width: 4 },
+            thickness: 0.75,
+            value: 90
+          }
+        }
+      }
+    ];
   }
 
   // Helper para formatar moeda

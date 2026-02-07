@@ -20,5 +20,7 @@ public class DashboardSummaryDto {
     private BigDecimal averageIncome;
     private BigDecimal monthBalance;
     private BigDecimal totalFixedExpense;
+    private BigDecimal safeToExpend;
+    private Double commitmentPct;
 
 }

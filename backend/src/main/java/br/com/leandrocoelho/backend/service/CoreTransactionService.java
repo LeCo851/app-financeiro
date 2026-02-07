@@ -65,58 +65,6 @@ public class CoreTransactionService {
 
         return repository.findByUser_IdAndDateBetweenOrderByDateDesc(userId, startZoned, endZoned);
     }
-
-    @Transactional(readOnly = true)
-    public BigDecimal getCurrentBalance(UUID userId) {
-        return repository.calculateBalanceUntilDate(userId, ZonedDateTime.now());
-    }
-
-    @Transactional(readOnly = true)
-    public BigDecimal getAverageMonthlyIncome(UUID userId) {
-        return repository.calculateAverageMonthlyIncome(userId);
-    }
-
-
-    @Transactional(readOnly = true)
-    public DashboardSummaryDto getDashboardSummary(UUID userId, Integer year, Integer month) {
-        // 1. Define o intervalo de datas (Se não vier, pega o mês atual)
-        LocalDate now = LocalDate.now();
-        int targetYear = (year != null) ? year : now.getYear();
-        int targetMonth = (month != null) ? month : now.getMonthValue();
-
-        LocalDate start = LocalDate.of(targetYear, targetMonth, 1);
-        LocalDate end = start.withDayOfMonth(start.lengthOfMonth());
-
-        ZonedDateTime startZoned = start.atStartOfDay(ZoneId.systemDefault());
-        ZonedDateTime endZoned = end.atTime(23, 59, 59).atZone(ZoneId.systemDefault());
-
-        // 2. Executa as queries
-        // Saldo das Contas (Saldo Real Bancário)
-        List<String> types = List.of("CHECKING_ACCOUNT","SAVINGS_ACCOUNT");
-        BigDecimal currentBalance = accountRepository.sumBalancesByUserIdAndTypes(userId,types);
-        if (currentBalance == null) currentBalance = BigDecimal.ZERO;
-
-        // Receitas do Mês
-        BigDecimal monthIncome = repository.sumIncomeByUserIdAndDate(userId, startZoned, endZoned);
-
-        // Despesas do Mês
-        BigDecimal monthExpense = repository.sumExpenseByUserIdAndDate(userId, startZoned, endZoned);
-
-        // Saldo do Mês (Fluxo de Caixa: O quanto sobrou ou faltou neste mês específico)
-        BigDecimal monthBalance = repository.sumPeriodBalance(userId, startZoned, endZoned);
-
-        BigDecimal fixedExpense = repository.sumFixedExpenses(userId, startZoned, endZoned);
-        // 3. Monta o DTO
-        return DashboardSummaryDto.builder()
-                .currentBalance(currentBalance)      // Card Saldo Corrente
-                .monthBalance(monthBalance)          // Card Saldo do Mês
-                .totalIncome(monthIncome)            // Card Receitas
-                .totalExpense(monthExpense)          // Card Despesas
-                .averageIncome(repository.calculateAverageMonthlyIncome(userId)) // Card Salário Médio
-                .totalFixedExpense(fixedExpense) // gastos fixos
-                .build();
-    }
-
     // ==================================================================================
     // MÉTODOS DE ESCRITA (WRITE - UPSERT LOGIC)
     // ==================================================================================

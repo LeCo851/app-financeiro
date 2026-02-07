@@ -1,0 +1,127 @@
+<div class="layout-wrapper">
+  <header class="app-header">
+    <div class="header-content">
+      <div class="logo-area" routerLink="/dashboard" style="cursor: pointer;">
+        <div class="logo-icon">
+          <i class="pi pi-wallet"></i>
+        </div>
+        <span class="logo-text">Perfil do Usuário</span>
+      </div>
+      <div class="actions-area">
+        <p-button
+          label="Voltar ao Dashboard"
+          icon="pi pi-arrow-left"
+          [text]="true"
+          severity="secondary"
+          routerLink="/dashboard">
+        </p-button>
+      </div>
+    </div>
+  </header>
+
+  <main class="profile-container">
+    <div class="profile-card">
+      <div class="profile-header">
+        <div class="avatar-placeholder">
+          <i class="pi pi-user"></i>
+        </div>
+        <div class="user-info">
+          <h2>{{ userProfile.fullName }}</h2>
+          <span class="email">{{ userProfile.email }}</span>
+        </div>
+      </div>
+
+      <div class="form-grid">
+        <!-- Nome Completo -->
+        <div class="field">
+          <label for="fullName">Nome Completo</label>
+          <input
+            pInputText
+            id="fullName"
+            [(ngModel)]="userProfile.fullName"
+            class="w-full" />
+        </div>
+
+        <!-- Salário Bruto -->
+        <div class="field">
+          <label for="grossSalary">Salário Bruto Mensal</label>
+          <p-inputNumber
+            inputId="grossSalary"
+            [(ngModel)]="userProfile.grossSalary"
+            mode="currency"
+            currency="BRL"
+            locale="pt-BR"
+            placeholder="R$ 0,00"
+            class="w-full"
+            styleClass="w-full">
+          </p-inputNumber>
+          <small class="help-text">Usado para cálculos de impostos e projeções.</small>
+        </div>
+
+        <!-- Estimativa Salário Líquido -->
+        <div class="field">
+          <label for="netSalary">Estimativa Salário Líquido</label>
+          <p-inputNumber
+            inputId="netSalary"
+            [(ngModel)]="userProfile.netSalaryEstimate"
+            mode="currency"
+            currency="BRL"
+            locale="pt-BR"
+            placeholder="R$ 0,00"
+            class="w-full"
+            styleClass="w-full">
+          </p-inputNumber>
+        </div>
+
+        <!-- Meta de Economia -->
+        <div class="field">
+          <label for="savingsGoal">Meta de Economia Mensal</label>
+          <p-inputNumber
+            inputId="savingsGoal"
+            [(ngModel)]="userProfile.savingsGoal"
+            mode="currency"
+            currency="BRL"
+            locale="pt-BR"
+            placeholder="R$ 0,00"
+            class="w-full"
+            styleClass="w-full">
+          </p-inputNumber>
+        </div>
+
+        <!-- Recebe PLR? -->
+        <div class="field-checkbox">
+          <p-checkbox
+            [(ngModel)]="userProfile.receivesPlr"
+            [binary]="true"
+            inputId="receivesPlr">
+          </p-checkbox>
+          <label for="receivesPlr">Recebo PLR / Bônus Anual</label>
+        </div>
+
+        <!-- Estimativa PLR -->
+        <div class="field" *ngIf="userProfile.receivesPlr">
+          <label for="plrEstimate">Estimativa de PLR (Anual)</label>
+          <p-inputNumber
+            inputId="plrEstimate"
+            [(ngModel)]="userProfile.plrEstimate"
+            mode="currency"
+            currency="BRL"
+            locale="pt-BR"
+            placeholder="R$ 0,00"
+            class="w-full"
+            styleClass="w-full">
+          </p-inputNumber>
+        </div>
+      </div>
+
+      <div class="actions-footer">
+        <p-button
+          label="Salvar Alterações"
+          icon="pi pi-check"
+          [loading]="saving"
+          (onClick)="saveProfile()">
+        </p-button>
+      </div>
+    </div>
+  </main>
+</div>

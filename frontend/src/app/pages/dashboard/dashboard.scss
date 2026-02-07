@@ -221,6 +221,11 @@
     flex: 1;
     padding: 1rem;
     position: relative;
+
+    ::ng-deep plotly-plot {
+      border-radius: 12px;
+      overflow: hidden;
+    }
   }
 }
 
