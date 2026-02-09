@@ -2,6 +2,8 @@ package br.com.leandrocoelho.backend.service.ai;
 
 import lombok.extern.slf4j.Slf4j;
 import org.springframework.ai.chat.client.ChatClient;
+import org.springframework.ai.openai.OpenAiChatOptions;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
 
 import java.util.HashMap;
@@ -18,6 +20,9 @@ public class AiCategorizationService {
             "Alimentação", "Transporte", "Moradia", "Lazer", "Saúde",
             "Educação", "Compras", "Serviços", "Investimentos",
             "Transferência", "Receita", "Impostos","Pet", "Outros");
+
+    @Value("${app.ai.models.categorization}")
+    private String categorizationModel;
 
     public AiCategorizationService(ChatClient.Builder chatClientBuilder) {
         this.chatClient = chatClientBuilder.build();
@@ -45,6 +50,10 @@ public class AiCategorizationService {
         try {
             String response = chatClient.prompt()
                     .user(prompt)
+                    .options(OpenAiChatOptions.builder()
+                            .model(categorizationModel)
+                            .temperature(0.1)
+                            .build())
                     .call()
                     .content();
 

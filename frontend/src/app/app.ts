@@ -1,12 +1,14 @@
 import { Component, Inject, OnInit, PLATFORM_ID, Renderer2 } from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
 import {RouterOutlet} from '@angular/router';
+import { ChatDialogComponent } from './components/chat-dialog/chat-dialog.component';
+import { MarkdownModule } from 'ngx-markdown';
 
 @Component({
   selector: 'app-root',
   templateUrl: './app.html',
   styleUrls: ['./app.scss'],
-  imports: [RouterOutlet]
+  imports: [RouterOutlet, ChatDialogComponent,MarkdownModule]
 })
 export class App implements OnInit {
 

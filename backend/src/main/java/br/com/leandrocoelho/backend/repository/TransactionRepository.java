@@ -1,6 +1,8 @@
 package br.com.leandrocoelho.backend.repository;
 
+import br.com.leandrocoelho.backend.dto.response.CategoryExpenseDto;
 import br.com.leandrocoelho.backend.model.Transaction;
+import br.com.leandrocoelho.backend.model.User;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -132,4 +134,27 @@ public interface TransactionRepository extends JpaRepository<Transaction, UUID> 
             @Param("start") ZonedDateTime start,
             @Param("end") ZonedDateTime end
     );
+    @Query("""
+        SELECT new br.com.leandrocoelho.backend.dto.response.CategoryExpenseDto(
+            c.name,
+            SUM(t.amount)
+        )
+        FROM Transaction t
+        JOIN t.category c
+        WHERE t.user.id = :userId
+          AND t.date BETWEEN :start AND :end
+          AND t.type = 'EXPENSE'
+        GROUP BY c.name
+        ORDER BY SUM(t.amount) DESC
+        LIMIT 5
+    """)
+    List<CategoryExpenseDto> findTopExpenseCategories(
+            @Param("userId") UUID userId,
+            @Param("start") ZonedDateTime start,
+            @Param("end") ZonedDateTime end
+    );
+
+    // Retorna as últimas 5 transações para contexto imediato
+    List<Transaction> findTop5ByUserIdOrderByDateDesc(UUID userId);
+
 }

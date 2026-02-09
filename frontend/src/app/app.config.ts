@@ -5,6 +5,7 @@ import {provideHttpClient, withFetch, withInterceptors} from '@angular/common/ht
 
 import {providePrimeNG} from 'primeng/config';
 import Aura from '@primeng/themes/aura';
+import { provideMarkdown } from 'ngx-markdown';
 
 import { routes } from './app.routes';
 import {authInterceptor} from './core/interceptors/auth.interceptor';
@@ -28,6 +29,7 @@ export const appConfig: ApplicationConfig = {
           darkModeSelector: '.my-app-dark'
         }
       }
-    })
+    }),
+    provideMarkdown()
   ]
 };

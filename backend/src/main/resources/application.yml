@@ -59,3 +59,11 @@ pluggy:
   base-url: https://api.pluggy.ai
   client-id: ${PLUGGY_CLIENT_ID}
   client-secret: ${PLUGGY_CLIENT_SECRET}
+
+app:
+  ai:
+    models:
+        # Modelo especializado em seguir instruções (Categorização)
+      categorization: meta-llama/llama-4-scout-17b-16e-instruct
+        # Modelo com melhor raciocínio e chat (Advisor)
+      advisor: llama-3.3-70b-versatile

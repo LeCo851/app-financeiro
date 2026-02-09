@@ -1,6 +1,8 @@
 package br.com.leandrocoelho.backend.service;
 
+import br.com.leandrocoelho.backend.dto.response.CategoryExpenseDto;
 import br.com.leandrocoelho.backend.dto.response.DashboardSummaryDto;
+import br.com.leandrocoelho.backend.model.Transaction;
 import br.com.leandrocoelho.backend.repository.AccountRepository;
 import br.com.leandrocoelho.backend.repository.TransactionRepository;
 import br.com.leandrocoelho.backend.repository.UserRepository;
@@ -14,6 +16,7 @@ import java.math.BigDecimal;
 import java.time.LocalDate;
 import java.time.ZoneId;
 import java.time.ZonedDateTime;
+import java.util.Collections;
 import java.util.List;
 import java.util.UUID;
 
@@ -53,10 +56,18 @@ public class DashboardService {
         FinancialHealthProjection healthProjection = userRepository.calculateFinancialHealth(userId, startZoned, endZoned);
 
         BigDecimal safeToSpend = (healthProjection != null) ? healthProjection.getSafeToSpend() : BigDecimal.ZERO;
+
         log.info("Valor disponível para gastar: {}", safeToSpend);
+
         Double commitmentPct = (healthProjection != null) ? healthProjection.getCommitmentPercentage() : 0.0;
+
         BigDecimal fixedExpense = (healthProjection != null) ? healthProjection.getFixedExpenses() : BigDecimal.ZERO;
 
+        List<CategoryExpenseDto> topCategories = repository.findTopExpenseCategories(userId, startZoned, endZoned);
+        if (topCategories == null) topCategories = Collections.emptyList();
+
+        List<Transaction> recentTransactions = repository.findTop5ByUserIdOrderByDateDesc(userId);
+        if(recentTransactions == null) recentTransactions = Collections.emptyList();
         // 3. Monta o DTO
         return DashboardSummaryDto.builder()
                 .currentBalance(currentBalance)      // Card Saldo Corrente
@@ -67,6 +78,8 @@ public class DashboardService {
                 .totalFixedExpense(fixedExpense) // gastos fixos
                 .safeToExpend(safeToSpend)
                 .commitmentPct(commitmentPct)
+                .topExpenseCategories(topCategories)
+                .recentTransactions(recentTransactions)
                 .build();
     }
 

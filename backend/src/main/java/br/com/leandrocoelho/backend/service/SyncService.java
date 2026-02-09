@@ -86,6 +86,7 @@ public class SyncService {
                         .collect(Collectors.toList());
 
                 // 6. Salva em Lote (CoreService aplica regras de normalização de sinal aqui)
+                log.info(transactionsToSave.toString());
                 coreTransactionService.saveTransactionsBatch(transactionsToSave);
 
             } catch (Exception e) {

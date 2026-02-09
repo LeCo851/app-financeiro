@@ -1,11 +1,13 @@
 package br.com.leandrocoelho.backend.dto.response;
 
+import br.com.leandrocoelho.backend.model.Transaction;
 import lombok.AllArgsConstructor;
 import lombok.Builder;
 import lombok.Data;
 import lombok.NoArgsConstructor;
 
 import java.math.BigDecimal;
+import java.util.List;
 
 @Data
 @Builder
@@ -22,5 +24,7 @@ public class DashboardSummaryDto {
     private BigDecimal totalFixedExpense;
     private BigDecimal safeToExpend;
     private Double commitmentPct;
+    List<CategoryExpenseDto> topExpenseCategories; // Onde o dinheiro está indo
+    List<Transaction> recentTransactions;
 
 }
