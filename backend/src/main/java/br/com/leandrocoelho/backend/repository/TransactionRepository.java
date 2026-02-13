@@ -57,17 +57,18 @@ public interface TransactionRepository extends JpaRepository<Transaction, UUID> 
     Optional<Transaction> findByPluggyTransactionId(String pluggyTransactionId);
 
     @Query("""
-        SELECT t FROM Transaction t 
-        WHERE t.account.id = :accountId 
-        AND t.amount = :amount 
-        AND CAST(t.date AS LocalDate) = :date
-        AND t.description = :description
-    """)
+    SELECT t FROM Transaction t
+    WHERE t.account.id = :accountId 
+    AND t.amount = :amount 
+    AND t.description = :description
+    AND t.date >= :start AND t.date <= :end
+""")
     Optional<Transaction> findPotentialDuplicate(
             @Param("accountId") UUID accountId,
             @Param("amount") BigDecimal amount,
-            @Param("date") LocalDate date,
-            @Param("description") String description
+            @Param("description") String description,
+            @Param("start") ZonedDateTime start,
+            @Param("end") ZonedDateTime end
     );
     List<Transaction> findByPluggyTransactionIdIn(Collection<String> pluggyTransactionIds);
 
@@ -118,7 +119,7 @@ public interface TransactionRepository extends JpaRepository<Transaction, UUID> 
     Optional<Transaction> findRecurringPattern(
             @Param("userId") UUID userId,
             @Param("description") String description,
-            @Param("cutoffDate") LocalDate cutoffDate
+            @Param("cutoffDate") ZonedDateTime cutoffDate
     );
 
     @Query("""

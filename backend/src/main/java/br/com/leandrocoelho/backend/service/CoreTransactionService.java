@@ -176,7 +176,10 @@ public class CoreTransactionService {
             Transaction existing = existingMap.get(tx.getPluggyTransactionId());
             updateExistingTransactionData(existing, tx);
             addToSaveList(existing, processedIds, toSave);
+        }else {
+            handlePotentialNewPluggyTransaction(tx, existingMap, processedIds, recurrenceLookBack, toSave);
         }
+
     }
 
     private void handlePotentialNewPluggyTransaction(
@@ -186,11 +189,16 @@ public class CoreTransactionService {
             LocalDate recurrenceLookBack,
             List<Transaction> toSave
     ){
+        ZonedDateTime txDate = tx.getDate();
+        ZonedDateTime startOfDay = txDate.toLocalDate().atStartOfDay(txDate.getZone());
+        ZonedDateTime endOfDay = startOfDay.plusDays(1).minusNanos(1);
+
         Optional<Transaction> ghostDuplicate = repository.findPotentialDuplicate(
                 tx.getAccount().getId(),
                 tx.getAmount(),
-                tx.getDate().toLocalDate(),
-                tx.getDescription()
+                tx.getDescription(),
+                startOfDay,
+                endOfDay
         );
         if (ghostDuplicate.isPresent()){
             Transaction existing = ghostDuplicate.get();
@@ -206,7 +214,8 @@ public class CoreTransactionService {
     }
 
     private void applyRecurrencePattern(Transaction tx, LocalDate lookBackDate){
-        repository.findRecurringPattern(tx.getUser().getId(), tx.getDescription(), lookBackDate)
+       ZonedDateTime zdtLookback = lookBackDate.atStartOfDay(ZoneId.systemDefault());
+        repository.findRecurringPattern(tx.getUser().getId(), tx.getDescription(), zdtLookback)
                 .ifPresent(pattern -> {
                     tx.setFixedExpense(true);
                     log.info("Recorrência: '{}' marcada como fixa (baseada em registro de {})", tx.getDescription(), pattern.getDate());
